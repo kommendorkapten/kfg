@@ -40,7 +40,7 @@ int ray_tri_intersect(const struct particle* r,
                       float* u,
                       float* v)
 {
-        const float epsilon = 1e-6;
+        const float epsilon = 1e-6f;
         struct vec3 e1;
         struct vec3 e2;
         struct vec3 p;

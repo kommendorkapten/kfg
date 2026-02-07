@@ -13,6 +13,8 @@
 #include <stdint.h>
 #include "km_math.h"
 
+_Static_assert(sizeof(struct vec3) == 12, "vec3 must be 12 bytes");
+
 struct vec3 vec3_add(const struct vec3* v0,
                      const struct vec3* v1)
 {

@@ -14,6 +14,7 @@
 #include <stdlib.h>
 
 #include "../km_mat4.h"
+#include "../km_math.h"
 #include "metal_renderer.h"
 
 /* ------------------------------------------------------------------ */
@@ -31,9 +32,9 @@ struct uniforms
         float model[16];
         float view[16];
         float projection[16];
-        float light_dir[3];
+        struct vec3 light_dir;
         float _pad0;
-        float object_color[3];
+        struct vec3 object_color;
         float _pad1;
 };
 
@@ -275,9 +276,9 @@ static void metal_render(struct renderer *r, float dt)
                 mat4_rotate_x(rx, 0.4363f);          /* ≈ 25° tilt */
                 mat4_multiply(u.model, rx, ry);
 
-                struct vec3 eye    = { 0.0f, 2.0f, 5.0f };
-                struct vec3 center = { 0.0f, 0.0f, 0.0f };
-                struct vec3 up     = { 0.0f, 1.0f, 0.0f };
+                struct vec3 eye    = { .a = { 0.0f, 2.0f, 5.0f } };
+                struct vec3 center = { .a = { 0.0f, 0.0f, 0.0f } };
+                struct vec3 up     = { .a = { 0.0f, 1.0f, 0.0f } };
                 mat4_look_at(u.view, &eye, &center, &up);
 
                 float aspect = (float)ctx.width / (float)ctx.height;
@@ -285,15 +286,15 @@ static void metal_render(struct renderer *r, float dt)
                                  0.1f, 100.0f);       /* 60° FOV */
 
                 /* Light direction (travels from upper-right toward origin) */
-                u.light_dir[0] = -0.4082f;
-                u.light_dir[1] = -0.8165f;
-                u.light_dir[2] = -0.4082f;
+                u.light_dir.x = -0.4082f;
+                u.light_dir.y = -0.8165f;
+                u.light_dir.z = -0.4082f;
                 u._pad0        =  0.0f;
 
                 /* Object colour – pleasant blue */
-                u.object_color[0] = 0.3f;
-                u.object_color[1] = 0.6f;
-                u.object_color[2] = 0.8f;
+                u.object_color.x = 0.3f;
+                u.object_color.y = 0.6f;
+                u.object_color.z = 0.8f;
                 u._pad1           = 0.0f;
 
                 /* ---- Acquire drawable ---- */

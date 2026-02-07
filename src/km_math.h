@@ -15,9 +15,16 @@
 
 struct vec3
 {
-        float x;
-        float y;
-        float z;
+        union
+        {
+                float a[3];
+                struct
+                {
+                        float x;
+                        float y;
+                        float z;
+                };
+        };
 };
 
 extern struct vec3 vec3_add(const struct vec3*, const struct vec3*);
