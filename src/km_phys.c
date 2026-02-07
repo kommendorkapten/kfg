@@ -166,7 +166,7 @@ void drag_force(struct vec3* f, const struct world* w, const struct object* o)
 
 void quantize_force(struct vec3* f)
 {
-        float thr = 0.01;
+        float thr = 0.01f;
 
         if (fabsf(f->x) < thr) f->x = 0.0f;
         if (fabsf(f->y) < thr) f->y = 0.0f;

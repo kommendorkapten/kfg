@@ -73,7 +73,7 @@ long timing_current_usec(void)
         return (long)(now.tv_sec * 1000000 + now.tv_usec);
 }
 
-void timing_sleep(unsigned long ns)
+void timing_sleep(long ns)
 {
         long start = timing_current_usec();
         long left;

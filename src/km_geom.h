@@ -10,8 +10,8 @@
 * file and include the License file at http://opensource.org/licenses/CDDL-1.0.
 */
 
-#ifndef __KM_GEOM_H__
-#define __KM_GEOM_H__
+#ifndef KM_GEOM_H
+#define KM_GEOM_H
 
 #include "km_math.h"
 
@@ -111,4 +111,4 @@ void collide_particle(struct particle* p,
                       struct vec3* restrict v2,
                       float rc);
 
-#endif /* __KM_GOEM_H__ */
+#endif /* KM_GEOM_H */

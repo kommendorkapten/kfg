@@ -10,8 +10,8 @@
 * file and include the License file at http://opensource.org/licenses/CDDL-1.0.
 */
 
-#ifndef __KM_MATH_H__
-#define __KM_MATH_H__
+#ifndef KM_MATH_H
+#define KM_MATH_H
 
 struct vec3
 {
@@ -34,4 +34,4 @@ extern struct vec3 vec3_cross(const struct vec3* restrict,
                               const struct vec3* restrict);
 extern float km_rsqrt(float x);
 
-#endif /* __KM_MATH_H__ */
+#endif /* KM_MATH_H */

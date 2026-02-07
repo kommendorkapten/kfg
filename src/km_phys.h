@@ -10,8 +10,8 @@
 * file and include the License file at http://opensource.org/licenses/CDDL-1.0.
 */
 
-#ifndef __KM_PHYS_H__
-#define __KM_PHYS_H__
+#ifndef KM_PHYS_H
+#define KM_PHYS_H
 
 #include "km_math.h"
 
@@ -78,4 +78,4 @@ extern void drag_force(struct vec3*,
                        const struct world*,
                        const struct object*);
 
-#endif /* __KM_PHYS_H__ */
+#endif /* KM_PHYS_H */

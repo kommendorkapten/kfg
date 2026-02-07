@@ -1,6 +1,6 @@
 include ../common.mk
 
-all: free_fall
+all: bounce
 
 CFLAGS += -I../src
 
@@ -9,11 +9,8 @@ DEPS = ../src/objs/km_geom.o \
 	../src/objs/km_phys.o \
 	../src/objs/timing.o
 
-free_fall: free_fall.c $(DEPS)
-	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $^ $(LIBS)
-
-geom: geom.c $(DEPS)
+bounce: bounce.c $(DEPS)
 	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $^ $(LIBS)
 
 clean:
-	rm -rf free_fall geom objs/*
+	rm -rf bounce objs/*

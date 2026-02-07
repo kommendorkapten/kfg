@@ -71,6 +71,6 @@ extern long timing_current_usec(void);
  * This usually provides much better precision on some systems.
  * @params ns the time to sleep in nanoseconds.
  */
-extern void timing_sleep(unsigned long ns);
+extern void timing_sleep(long ns);
 
 #endif /* __TIMING_H__ */
