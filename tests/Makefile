@@ -12,5 +12,8 @@ DEPS = ../src/objs/km_geom.o \
 free_fall: free_fall.c $(DEPS)
 	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $^ $(LIBS)
 
+geom: geom.c $(DEPS)
+	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $^ $(LIBS)
+
 clean:
 	rm -rf free_fall objs/*
