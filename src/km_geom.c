@@ -10,8 +10,10 @@
 * file and include the License file at http://opensource.org/licenses/CDDL-1.0.
 */
 
+#include <stdlib.h>
 #include <stdio.h>
 #include <math.h>
+#include <string.h>
 #include "km_geom.h"
 
 void print_particle(const struct particle* p)
@@ -21,9 +23,9 @@ void print_particle(const struct particle* p)
         printf("acl: %f %f %f\n", p->a.x, p->a.y, p->a.z);
 }
 
-void mesh_get_tri(struct vec3** restrict v0,
-                  struct vec3** restrict v1,
-                  struct vec3** restrict v2,
+void mesh_get_tri(struct vertex** restrict v0,
+                  struct vertex** restrict v1,
+                  struct vertex** restrict v2,
                   const struct mesh* m,
                   int i)
 {
@@ -119,4 +121,11 @@ void collide_particle(struct particle* p,
         float factor = (1.0f + rc) * vn;
         n = vec3_scalarm(&n, factor);
         p->v = vec3_sub(&p->v, &n);
+}
+
+void mesh_free(struct mesh* m)
+{
+        free(m->vertices);
+        free(m->indices);
+        memset(m, 0, sizeof(*m));
 }

@@ -84,6 +84,15 @@ void mat4_rotate_y(float* m, float angle);
  */
 void mat4_rotate_z(float* m, float angle);
 
+/**
+ * Create a translation matrix
+ * @param m the output translation matrix
+ * @param x translation along x
+ * @param y translation along y
+ * @param z translation along z
+ * @return void
+ */
+void mat4_translate(float* m, float x, float y, float z);
 void mat4_print(const float* m);
 
 

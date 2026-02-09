@@ -13,6 +13,7 @@
 #ifndef KM_GEOM_H
 #define KM_GEOM_H
 
+#include <stdint.h>
 #include "km_math.h"
 
 struct particle
@@ -42,6 +43,12 @@ struct object
         float restitution;
 };
 
+struct vertex
+{
+        struct vec3 pos;
+        struct vec3 normal;
+};
+
 /*
   Access triangle i. All triangles should be encoded in CCW order.
   *v0 = &mesh.vertices[mesh.indices[i * 3 + 0]];
@@ -50,11 +57,11 @@ struct object
 */
 struct mesh
 {
-        struct vec3* vertices;
-        int* indices;
-        int vertex_count;
-        int index_count;
+        struct vertex* vertices;
+        uint16_t* indices;
         float restitution;
+        uint16_t vertex_count;
+        uint16_t index_count;
 };
 
 /**
@@ -73,9 +80,9 @@ void print_particle(const struct particle* p);
  * @params n the index of the triangle in the mesh
  * @return void
  */
-void mesh_get_tri(struct vec3** restrict,
-                  struct vec3** restrict,
-                  struct vec3** restrict,
+void mesh_get_tri(struct vertex** restrict,
+                  struct vertex** restrict,
+                  struct vertex** restrict,
                   const struct mesh*,
                   int);
 
@@ -112,5 +119,14 @@ void collide_particle(struct particle* p,
                       struct vec3* restrict v1,
                       struct vec3* restrict v2,
                       float rc);
+
+/**
+ * Free all memory held by a mesh.
+ * After the memory is freed, all members are set to zero.
+ * If the mesh is allocated on the heap, it is not freed.
+ * @param m a mesh to free
+ * @return void
+ */
+void mesh_free(struct mesh* m);
 
 #endif /* KM_GEOM_H */

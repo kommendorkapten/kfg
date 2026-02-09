@@ -64,16 +64,16 @@ int main(int argc, char** argv)
 
         // create a mesh that (-1,1) (-1,-1) (1, -1) (1,1) in the x-z plane
         struct mesh s1;
-        s1.vertices = malloc(4 * sizeof(struct vec3));
+        s1.vertices = malloc(4 * sizeof(struct vertex));
         s1.indices = malloc(6 * sizeof(int));
         s1.vertex_count = 4;
         s1.index_count = 6;
         s1.restitution = 1.0f;
 
-        s1.vertices[0] = (struct vec3){-1.0f, 0.0f, -1.0f};
-        s1.vertices[1] = (struct vec3){-1.0f, 0.0f, 1.0f};
-        s1.vertices[2] = (struct vec3){1.0f, 0.0f, 1.0f};
-        s1.vertices[3] = (struct vec3){1.0f, 0.0f, -1.0f};
+        s1.vertices[0].pos = (struct vec3){ .a = {-1.0f, 0.0f, -1.0f} };
+        s1.vertices[1].pos = (struct vec3){ .a = {-1.0f, 0.0f, 1.0f} };
+        s1.vertices[2].pos = (struct vec3){ .a = {1.0f, 0.0f, 1.0f} };
+        s1.vertices[3].pos = (struct vec3){ .a = {1.0f, 0.0f, -1.0f} };
 
         s1.indices[0] = 0;
         s1.indices[1] = 1;
@@ -82,11 +82,11 @@ int main(int argc, char** argv)
         s1.indices[4] = 3;
         s1.indices[5] = 0;
 
-        w.g = (struct vec3){0.0f, -9.82f, 0.0f};
+        w.g = (struct vec3){ .a = {0.0f, -9.82f, 0.0f} };
         w.dt = (float)((double)PERIOD/(double)SECOND);
         w.air_density = 1.225f;
         w.surfaces = &s1;
-        w.num_surfaces = 1;
+        w.surface_count = 1;
         w.ss_thr   = 0.008f * 0.008f; // 8mm/s
         w.ss_c_thr = 0.08f * 0.08f; // 8cm/s
 
@@ -149,8 +149,8 @@ void set_high_priority(void) {
 
 void init_object(struct object* o)
 {
-        o->p.p = (struct vec3){0.0f, 0.0f, 0.0f};
-        o->p.v = (struct vec3){0.0f, 0.0f, 0.0f};
-        o->p.a = (struct vec3){0.0f, 0.0f, 0.0f};
+        o->p.p = (struct vec3){ .a = {0.0f, 0.0f, 0.0f} };
+        o->p.v = (struct vec3){ .a = {0.0f, 0.0f, 0.0f} };
+        o->p.a = (struct vec3){ .a = {0.0f, 0.0f, 0.0f} };
         o->steady_state = 0;
 }

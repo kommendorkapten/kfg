@@ -115,6 +115,14 @@ void mat4_rotate_z(float* m, float angle)
         m[15] =  1.0f;
 }
 
+void mat4_translate(float *m, float x, float y, float z)
+{
+        mat4_identity(m);
+        m[12] = x;
+        m[13] = y;
+        m[14] = z;
+}
+
 void mat4_print(const float* m)
 {
         printf("(%f %f %f %f\n", m[0], m[4], m[8], m[12]);

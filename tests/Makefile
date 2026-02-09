@@ -1,6 +1,6 @@
 include ../common.mk
 
-all: free_fall
+all: free_fall geom
 
 CFLAGS += -I../src
 

@@ -31,10 +31,10 @@ struct world
         float dt;
         // Air density to use
         float air_density;
-        // Any surfaces in the worls
+        // Any surfaces in the world
         struct mesh* surfaces;
         // Number of meshes
-        int num_surfaces;
+        int surface_count;
         // threshod for squared velocity to considered to be in a steady state
         float ss_thr;
         // treshold for squared velocity during collitions

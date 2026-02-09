@@ -7,9 +7,9 @@ int main(void)
 {
         int fail = 0;
 
-        struct vec3 v0 = {-1.0f, 0.0f, -2.0f};
-        struct vec3 v1 = {-1.0f, 0.0f, 1.0f};
-        struct vec3 v2 = {2.0f, 0.0f, 1.0f};
+        struct vec3 v0 = { .a = { -1.0f, 0.0f, -2.0f } };
+        struct vec3 v1 = { .a = { -1.0f, 0.0f, 1.0f } };
+        struct vec3 v2 = { .a = { 2.0f, 0.0f, 1.0f } };
         struct particle p = {0};
         float t;
         float u;
@@ -17,8 +17,8 @@ int main(void)
         int coll;
 
         // Test that a particle collides
-        p.v = (struct vec3){0.0f, -1.0f, 0.0f};
-        p.p = (struct vec3){0.0f, 0.5f, 0.0};
+        p.v = (struct vec3){ .a = { 0.0f, -1.0f, 0.0f } };
+        p.p = (struct vec3){ .a = { 0.0f, 0.5f, 0.0 } };
         coll = ray_tri_intersect(&p, &v0, &v1, &v2, &t, &u, &v);
         if (!coll)
         {

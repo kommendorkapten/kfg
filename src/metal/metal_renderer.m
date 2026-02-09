@@ -15,18 +15,13 @@
 
 #include "../km_mat4.h"
 #include "../km_math.h"
+#include "../km_geom.h"
 #include "metal_renderer.h"
 #include "../km_scene.h"
 
 /* ------------------------------------------------------------------ */
-/* Vertex / uniform data types (must match the Metal shader structs)   */
+/* Uniform data type (must match the Metal shader struct)               */
 /* ------------------------------------------------------------------ */
-
-struct vertex
-{
-        float position[3];
-        float normal[3];
-};
 
 struct uniforms
 {
@@ -40,56 +35,21 @@ struct uniforms
 };
 
 /* ------------------------------------------------------------------ */
-/* Cube geometry – 24 vertices (4 per face), 36 indices                */
-/* ------------------------------------------------------------------ */
-
-static const struct vertex cube_vertices[] =
-{
-        /* Front face  (z = +1)  normal ( 0,  0,  1) */
-        {{ -1, -1,  1 }, {  0,  0,  1 }},
-        {{  1, -1,  1 }, {  0,  0,  1 }},
-        {{  1,  1,  1 }, {  0,  0,  1 }},
-        {{ -1,  1,  1 }, {  0,  0,  1 }},
-        /* Back face   (z = -1)  normal ( 0,  0, -1) */
-        {{  1, -1, -1 }, {  0,  0, -1 }},
-        {{ -1, -1, -1 }, {  0,  0, -1 }},
-        {{ -1,  1, -1 }, {  0,  0, -1 }},
-        {{  1,  1, -1 }, {  0,  0, -1 }},
-        /* Top face    (y = +1)  normal ( 0,  1,  0) */
-        {{ -1,  1,  1 }, {  0,  1,  0 }},
-        {{  1,  1,  1 }, {  0,  1,  0 }},
-        {{  1,  1, -1 }, {  0,  1,  0 }},
-        {{ -1,  1, -1 }, {  0,  1,  0 }},
-        /* Bottom face (y = -1)  normal ( 0, -1,  0) */
-        {{ -1, -1, -1 }, {  0, -1,  0 }},
-        {{  1, -1, -1 }, {  0, -1,  0 }},
-        {{  1, -1,  1 }, {  0, -1,  0 }},
-        {{ -1, -1,  1 }, {  0, -1,  0 }},
-        /* Right face  (x = +1)  normal ( 1,  0,  0) */
-        {{  1, -1,  1 }, {  1,  0,  0 }},
-        {{  1, -1, -1 }, {  1,  0,  0 }},
-        {{  1,  1, -1 }, {  1,  0,  0 }},
-        {{  1,  1,  1 }, {  1,  0,  0 }},
-        /* Left face   (x = -1)  normal (-1,  0,  0) */
-        {{ -1, -1, -1 }, { -1,  0,  0 }},
-        {{ -1, -1,  1 }, { -1,  0,  0 }},
-        {{ -1,  1,  1 }, { -1,  0,  0 }},
-        {{ -1,  1, -1 }, { -1,  0,  0 }},
-};
-
-static const uint16_t cube_indices[] =
-{
-         0,  1,  2,   0,  2,  3,   /* Front  */
-         4,  5,  6,   4,  6,  7,   /* Back   */
-         8,  9, 10,   8, 10, 11,   /* Top    */
-        12, 13, 14,  12, 14, 15,   /* Bottom */
-        16, 17, 18,  16, 18, 19,   /* Right  */
-        20, 21, 22,  20, 22, 23,   /* Left   */
-};
-
-/* ------------------------------------------------------------------ */
 /* Objective-C context object (so ARC manages Metal resources)         */
 /* ------------------------------------------------------------------ */
+
+/* ------------------------------------------------------------------ */
+/* Per-mesh GPU buffers                                                */
+/* ------------------------------------------------------------------ */
+
+@interface GpuMesh : NSObject
+@property (nonatomic, strong) id<MTLBuffer> vertexBuffer;
+@property (nonatomic, strong) id<MTLBuffer> indexBuffer;
+@property (nonatomic) int indexCount;
+@end
+
+@implementation GpuMesh
+@end
 
 @interface MetalContext : NSObject
 
@@ -97,16 +57,14 @@ static const uint16_t cube_indices[] =
 @property (nonatomic, strong) id<MTLCommandQueue>        commandQueue;
 @property (nonatomic, strong) id<MTLRenderPipelineState> pipelineState;
 @property (nonatomic, strong) id<MTLDepthStencilState>   depthStencilState;
-@property (nonatomic, strong) id<MTLBuffer>              vertexBuffer;
-@property (nonatomic, strong) id<MTLBuffer>              indexBuffer;
+@property (nonatomic, strong) NSMutableArray<GpuMesh *> *staticGpuMeshes;
+@property (nonatomic, strong) NSMutableArray<NSMutableArray<GpuMesh *> *> *entityGpuMeshes;
 @property (nonatomic, strong) CAMetalLayer              *metalLayer;
 @property (nonatomic)         SDL_MetalView              metalView;
 @property (nonatomic, strong) id<MTLTexture>             depthTexture;
 
 @property (nonatomic) int   width;
 @property (nonatomic) int   height;
-@property (nonatomic) float rotation;
-@property (nonatomic) int   numIndices;
 
 - (id<MTLTexture>)createDepthTextureWidth:(int)w height:(int)h;
 
@@ -236,22 +194,13 @@ static int metal_init(struct renderer *r, SDL_Window *window, int w, int h)
         ctx.depthStencilState    = [ctx.device
                 newDepthStencilStateWithDescriptor:dsd];
 
-        /* ---- Geometry buffers ---- */
-        ctx.vertexBuffer = [ctx.device
-                newBufferWithBytes:cube_vertices
-                            length:sizeof(cube_vertices)
-                           options:MTLResourceStorageModeShared];
-        ctx.indexBuffer  = [ctx.device
-                newBufferWithBytes:cube_indices
-                            length:sizeof(cube_indices)
-                           options:MTLResourceStorageModeShared];
-        ctx.numIndices   = sizeof(cube_indices) / sizeof(cube_indices[0]);
+        /* ---- Mesh arrays (populated later via upload) ---- */
+        ctx.staticGpuMeshes = [[NSMutableArray alloc] init];
+        ctx.entityGpuMeshes = [[NSMutableArray alloc] init];
 
         /* ---- Depth texture ---- */
         ctx.depthTexture = [ctx createDepthTextureWidth:ctx.width
                                                  height:ctx.height];
-
-        ctx.rotation = 0.0f;
 
         /* Transfer ownership to the C struct */
         r->ctx = (__bridge_retained void *)ctx;
@@ -261,21 +210,90 @@ static int metal_init(struct renderer *r, SDL_Window *window, int w, int h)
         return 0;
 }
 
+/* ------------------------------------------------------------------ */
+/* Upload meshes to GPU                                                */
+/* ------------------------------------------------------------------ */
+
+static GpuMesh *upload_one_mesh(id<MTLDevice> device, const struct mesh *m)
+{
+        GpuMesh *gm = [[GpuMesh alloc] init];
+
+        NSUInteger vsize = m->vertex_count * sizeof(struct vertex);
+        gm.vertexBuffer = [device
+                newBufferWithBytes:m->vertices
+                            length:vsize
+                           options:MTLResourceStorageModeShared];
+
+        NSUInteger isize = m->index_count * sizeof(uint16_t);
+        gm.indexBuffer = [device
+                newBufferWithBytes:m->indices
+                            length:isize
+                           options:MTLResourceStorageModeShared];
+
+        gm.indexCount = (int)m->index_count;
+        return gm;
+}
+
+static int metal_upload(struct renderer *r,
+                        const struct mesh *static_meshes, int static_count,
+                        const struct entity *entities, int entity_count)
+{
+        MetalContext *ctx = (__bridge MetalContext *)r->ctx;
+
+        /* Discard previously uploaded meshes */
+        [ctx.staticGpuMeshes removeAllObjects];
+        [ctx.entityGpuMeshes removeAllObjects];
+
+        /* Upload static meshes (world surfaces) */
+        for (int i = 0; i < static_count; i++) {
+                GpuMesh *gm = upload_one_mesh(ctx.device, &static_meshes[i]);
+                [ctx.staticGpuMeshes addObject:gm];
+        }
+
+        /* Upload entity meshes (one group per entity) */
+        for (int i = 0; i < entity_count; i++) {
+                const struct entity *e = &entities[i];
+                NSMutableArray<GpuMesh *> *group = [[NSMutableArray alloc] init];
+                for (int j = 0; j < e->surface_count; j++) {
+                        GpuMesh *gm = upload_one_mesh(ctx.device,
+                                                      &e->surfaces[j]);
+                        [group addObject:gm];
+                }
+                [ctx.entityGpuMeshes addObject:group];
+        }
+
+        fprintf(stdout, "Uploaded %d static + %d entity mesh group(s) to GPU\n",
+                static_count, entity_count);
+        return 0;
+}
+
+/* ------------------------------------------------------------------ */
+/* Render                                                              */
+/* ------------------------------------------------------------------ */
+
+static void draw_mesh(id<MTLRenderCommandEncoder> enc,
+                      GpuMesh *gm,
+                      const struct uniforms *u)
+{
+        [enc setVertexBuffer:gm.vertexBuffer offset:0 atIndex:0];
+        [enc setVertexBytes:u length:sizeof(*u) atIndex:1];
+        [enc setFragmentBytes:u length:sizeof(*u) atIndex:1];
+
+        [enc drawIndexedPrimitives:MTLPrimitiveTypeTriangle
+                        indexCount:(NSUInteger)gm.indexCount
+                         indexType:MTLIndexTypeUInt16
+                       indexBuffer:gm.indexBuffer
+                 indexBufferOffset:0];
+}
+
 static void metal_render(struct renderer *r, struct scene* scene, float dt)
 {
         @autoreleasepool {
                 MetalContext *ctx = (__bridge MetalContext *)r->ctx;
+                (void)dt;
 
-                /* ---- Update rotation ---- */
-                ctx.rotation += dt * 1.0f;   /* 1 rad / s */
-
-                /* ---- Build uniforms ---- */
+                /* ---- Shared view / projection ---- */
                 struct uniforms u;
-                float ry[16], rx[16];
-
-                mat4_rotate_y(ry, ctx.rotation);
-                mat4_rotate_x(rx, 0.4363f);          /* ≈ 25° tilt */
-                mat4_multiply(u.model, rx, ry);
 
                 mat4_look_at(u.view,
                              &scene->cam.pos,
@@ -332,15 +350,34 @@ static void metal_render(struct renderer *r, struct scene* scene, float dt)
                 };
                 [enc setViewport:vp];
 
-                [enc setVertexBuffer:ctx.vertexBuffer offset:0 atIndex:0];
-                [enc setVertexBytes:&u length:sizeof(u) atIndex:1];
-                [enc setFragmentBytes:&u length:sizeof(u) atIndex:1];
+                /* ---- Draw static meshes (identity model matrix) ---- */
+                mat4_identity(u.model);
+                for (GpuMesh *gm in ctx.staticGpuMeshes) {
+                        draw_mesh(enc, gm, &u);
+                }
 
-                [enc drawIndexedPrimitives:MTLPrimitiveTypeTriangle
-                                indexCount:(NSUInteger)ctx.numIndices
-                                 indexType:MTLIndexTypeUInt16
-                               indexBuffer:ctx.indexBuffer
-                         indexBufferOffset:0];
+                /* ---- Draw entities (per-entity transform) ---- */
+                for (int i = 0; i < scene->entity_count; i++) {
+                        const struct entity *e = &scene->entities[i];
+                        const struct particle *p = &e->o.p;
+
+                        /* Model = Translate * Rz * Ry * Rx */
+                        float t[16], rx[16], ry[16], rz[16], tmp[16];
+                        mat4_translate(t, p->p.x, p->p.y, p->p.z);
+                        mat4_rotate_x(rx, p->r.x);
+                        mat4_rotate_y(ry, p->r.y);
+                        mat4_rotate_z(rz, p->r.z);
+
+                        mat4_multiply(tmp, ry, rx);     /* tmp = Ry * Rx */
+                        mat4_multiply(tmp, rz, tmp);    /* tmp = Rz * Ry * Rx */
+                        mat4_multiply(u.model, t, tmp); /* model = T * R */
+
+                        NSMutableArray<GpuMesh *> *group =
+                                ctx.entityGpuMeshes[(NSUInteger)i];
+                        for (GpuMesh *gm in group) {
+                                draw_mesh(enc, gm, &u);
+                        }
+                }
 
                 [enc endEncoding];
                 [cmd presentDrawable:drawable];
@@ -385,6 +422,7 @@ struct renderer* metal_renderer_create(void)
         }
 
         r->init    = metal_init;
+        r->upload  = metal_upload;
         r->render  = metal_render;
         r->resize  = metal_resize;
         r->cleanup = metal_cleanup;

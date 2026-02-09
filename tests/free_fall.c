@@ -53,10 +53,10 @@ int free_fall(int duration, int freq)
         o.area = 0.0f;
         o.drag_c = 0.0;
 
-        w.g = (struct vec3){0.0f, -KM_PHYS_G, 0.0f};
+        w.g = (struct vec3){ .a = { 0.0f, -KM_PHYS_G, 0.0f} };
         w.dt = 1.0f / (float)freq;
         w.air_density = KM_PHYS_AIR_DENS;
-        w.num_surfaces = 0;
+        w.surface_count = 0;
 
         steps = (int)((1.0f / w.dt) * (float)duration + 0.5f);
 
@@ -109,10 +109,10 @@ int with_drag(int duration, int freq, float exp_p)
         o.area = 0.3f;
         o.drag_c = 0.47f;
 
-        w.g = (struct vec3){0.0f, -KM_PHYS_G, 0.0f};
+        w.g = (struct vec3){ .a = { 0.0f, -KM_PHYS_G, 0.0f } };
         w.dt = 1.0f / (float)freq;
         w.air_density = KM_PHYS_AIR_DENS;
-        w.num_surfaces = 0;
+        w.surface_count = 0;
 
         steps = (int)((1.0f / w.dt) * (float)duration + 0.5f);
 

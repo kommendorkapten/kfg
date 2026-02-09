@@ -75,16 +75,16 @@ void update_object(int step, struct world* w, struct object* o)
         p.v = vec3_sub(&new_pos, &p.p);
 
         // collision detection
-        for (int s = 0; s < w->num_surfaces; s++)
+        for (int s = 0; s < w->surface_count; s++)
         {
                 struct mesh* m = w->surfaces + s;
                 int num_tri = m->index_count / 3;
 
                 for (int ti = 0; ti < num_tri; ti++)
                 {
-                        struct vec3* v0;
-                        struct vec3* v1;
-                        struct vec3* v2;
+                        struct vertex* v0;
+                        struct vertex* v1;
+                        struct vertex* v2;
                         float t;
                         float u;
                         float v;
@@ -98,9 +98,9 @@ void update_object(int step, struct world* w, struct object* o)
 
                         // break out into new function
                         coll_test = ray_tri_intersect(&p,
-                                                      v0,
-                                                      v1,
-                                                      v2,
+                                                      &v0->pos,
+                                                      &v1->pos,
+                                                      &v2->pos,
                                                       &t,
                                                       &u,
                                                       &v);
@@ -117,9 +117,9 @@ void update_object(int step, struct world* w, struct object* o)
 
                                 coll = 1;
                                 collide_particle(&o->p,
-                                                 v0,
-                                                 v1,
-                                                 v2,
+                                                 &v0->pos,
+                                                 &v1->pos,
+                                                 &v2->pos,
                                                  rc);
 
                                 // is the object at rest?
