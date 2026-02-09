@@ -11,6 +11,7 @@
 #define KM_RENDERER_H
 
 struct SDL_Window;
+struct scene;
 
 enum renderer_backend
 {
@@ -21,7 +22,7 @@ enum renderer_backend
 struct renderer {
         int  (*init)(struct renderer *r, struct SDL_Window *window,
                      int w, int h);
-        void (*render)(struct renderer *r, float dt);
+        void (*render)(struct renderer *r, struct scene* s, float dt);
         void (*resize)(struct renderer *r, int width, int height);
         void (*cleanup)(struct renderer *r);
         void *ctx;

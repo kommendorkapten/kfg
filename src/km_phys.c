@@ -15,6 +15,15 @@
 #include "km_math.h"
 #include "km_geom.h"
 
+void default_world(struct world* w, int fps)
+{
+        w->g = (struct vec3){ .a = {0.0f, -KM_PHYS_G, 0.0f} };
+        w->dt = 1.0f / (float)fps;
+        w->air_density = KM_PHYS_AIR_DENS;
+        w->ss_thr   = 0.008f * 0.008f; // 8mm/s
+        w->ss_c_thr = 0.08f * 0.08f; // 8cm/s
+}
+
 void update_objects(int step,
                     struct world* w,
                     struct object* objs,

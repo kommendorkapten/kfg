@@ -1,8 +1,9 @@
 #include <SDL.h>
 #include <stdio.h>
 #include "km_input.h"
+#include "km_scene.h"
 
-int km_process_input(struct km_input *input)
+int km_process_input(struct km_input *input, struct scene* scene)
 {
         SDL_Event event;
 
@@ -25,16 +26,16 @@ int km_process_input(struct km_input *input)
                                 input->quit = 1;
                                 return 0;
                         case SDLK_UP:
-                                printf("Key pressed: UP\n");
+                                scene->cam.pos.z -= 0.2f;
                                 break;
                         case SDLK_DOWN:
-                                printf("Key pressed: DOWN\n");
+                                scene->cam.pos.z += 0.2f;
                                 break;
                         case SDLK_LEFT:
-                                printf("Key pressed: LEFT\n");
+                                scene->cam.pos.x -= 0.2f;
                                 break;
                         case SDLK_RIGHT:
-                                printf("Key pressed: RIGHT\n");
+                                scene->cam.pos.x += 0.2f;
                                 break;
                         default:
                                 break;
@@ -50,10 +51,6 @@ int km_process_input(struct km_input *input)
                         input->mouse_y  = event.motion.y;
                         input->mouse_dx = input->mouse_x - prev_x;
                         input->mouse_dy = input->mouse_y - prev_y;
-
-                        printf("Mouse: pos=(%d, %d) delta=(%d, %d)\n",
-                               input->mouse_x, input->mouse_y,
-                               input->mouse_dx, input->mouse_dy);
                         break;
                 }
 
@@ -61,8 +58,8 @@ int km_process_input(struct km_input *input)
                         if (event.window.event == SDL_WINDOWEVENT_RESIZED)
                         {
                                 input->window_resized = 1;
-                                input->new_width  = event.window.data1;
-                                input->new_height = event.window.data2;
+                                input->width  = event.window.data1;
+                                input->height = event.window.data2;
                         }
                         break;
 

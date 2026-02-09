@@ -23,6 +23,8 @@ struct particle
         struct vec3 v;
         // Acceleration
         struct vec3 a;
+        // Rotation around each axis, in radians
+        struct vec3 r;
 };
 
 struct object

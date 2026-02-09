@@ -16,6 +16,7 @@
 #include "../km_mat4.h"
 #include "../km_math.h"
 #include "metal_renderer.h"
+#include "../km_scene.h"
 
 /* ------------------------------------------------------------------ */
 /* Vertex / uniform data types (must match the Metal shader structs)   */
@@ -260,7 +261,7 @@ static int metal_init(struct renderer *r, SDL_Window *window, int w, int h)
         return 0;
 }
 
-static void metal_render(struct renderer *r, float dt)
+static void metal_render(struct renderer *r, struct scene* scene, float dt)
 {
         @autoreleasepool {
                 MetalContext *ctx = (__bridge MetalContext *)r->ctx;
@@ -276,10 +277,10 @@ static void metal_render(struct renderer *r, float dt)
                 mat4_rotate_x(rx, 0.4363f);          /* ≈ 25° tilt */
                 mat4_multiply(u.model, rx, ry);
 
-                struct vec3 eye    = { .a = { 0.0f, 2.0f, 5.0f } };
-                struct vec3 center = { .a = { 0.0f, 0.0f, 0.0f } };
-                struct vec3 up     = { .a = { 0.0f, 1.0f, 0.0f } };
-                mat4_look_at(u.view, &eye, &center, &up);
+                mat4_look_at(u.view,
+                             &scene->cam.pos,
+                             &scene->cam.center,
+                             &scene->cam.up);
 
                 float aspect = (float)ctx.width / (float)ctx.height;
                 mat4_perspective(u.projection, 1.0472f, aspect,
@@ -375,14 +376,13 @@ static void metal_cleanup(struct renderer *r)
         }
 }
 
-/* ------------------------------------------------------------------ */
-/* Public factory function                                             */
-/* ------------------------------------------------------------------ */
-
 struct renderer* metal_renderer_create(void)
 {
         struct renderer *r = calloc(1, sizeof(*r));
-        if (!r) return NULL;
+        if (!r)
+        {
+                return NULL;
+        }
 
         r->init    = metal_init;
         r->render  = metal_render;

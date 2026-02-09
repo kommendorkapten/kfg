@@ -16,6 +16,7 @@
 #include "km_math.h"
 
 struct object;
+struct mesh;
 
 // m/s2
 #define KM_PHYS_G 9.818f
@@ -39,6 +40,14 @@ struct world
         // treshold for squared velocity during collitions
         float ss_c_thr;
 };
+
+/**
+ * Create a default (empty) world
+ * @param the world struct to initialize
+ * @param frame rate
+ * @return void
+ */
+extern void default_world(struct world*, int);
 
 /**
  * Run one update step for all objects using the provided world.
