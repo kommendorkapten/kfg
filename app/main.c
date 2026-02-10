@@ -87,7 +87,7 @@ int main(int argc, char *argv[])
         }
 
         // Setup camera
-        scene.cam.pos = (struct vec3){ .a = { 0.0f, 2.0f, 15.0f } };
+        scene.cam.pos = (struct vec3){ .a = { 0.0f, 0.4f, 15.0f } };
         scene.cam.center = (struct vec3){ .a = { 0.0f, 0.0f, 0.0f } };
         scene.cam.up = (struct vec3){ .a = { 0.0f, 1.0f, 0.0f } };
 
@@ -105,6 +105,12 @@ int main(int argc, char *argv[])
         scene.entities[0].surfaces = malloc(1 * sizeof(struct mesh));
         scene.entities[0].surface_count = 1;
         scene.entities[0].o.p.p.y = 3.0f;
+        scene.entities[0].o.m = 1.0f;
+        scene.entities[0].o.area = 0.3f;
+        scene.entities[0].o.drag_c = 0.47f;
+        scene.entities[0].o.restitution = 0.9f;
+        scene.entities[0].o.p.rad = 1.0f;
+
         init_cube(&scene.entities[0].surfaces[0]);
 
         if (renderer->upload(renderer,
@@ -144,6 +150,12 @@ int main(int argc, char *argv[])
                 float dt  = (float)(now - last)
                         / (float)SDL_GetPerformanceFrequency();
                 last = now;
+
+                // update objects
+                for (int i = 0; i < scene.entity_count; i++)
+                {
+                        update_object(1, &scene.w, &scene.entities[i].o);
+                }
 
                 renderer->render(renderer, &scene, dt);
                 float elapsed = (float)(SDL_GetPerformanceCounter() - last)
@@ -194,6 +206,7 @@ void init_cube(struct mesh* m)
         m->vertices = malloc(m->vertex_count * sizeof(struct vertex));
         m->index_count = 36;
         m->indices = malloc(m->index_count * sizeof(int));
+        m->restitution = 1.0f;
 
         /* Front face  (z = +1)  normal ( 0,  0,  1) */
         m->vertices[ 0] = (struct vertex){ .pos = { .a = {-1, -1,  1} }, .normal = { .a = { 0,  0,  1} } };
@@ -257,12 +270,14 @@ void init_plane(struct mesh* m, float w, float h)
         m->vertices = malloc(m->vertex_count * sizeof(struct vertex));
         m->index_count = 6;
         m->indices = malloc(m->index_count * sizeof(int));
+        m->restitution = 0.7f;
 
         w = w / 2.0f;
         h = h / 2.0f;
+        float tilt = -2.0f;
 
-        m->vertices[0] = (struct vertex){ .pos = { .a = {-w,  0, -h} }, .normal = { .a = { 0,  1,  0} } };
-        m->vertices[1] = (struct vertex){ .pos = { .a = {-w,  0,  h} }, .normal = { .a = { 0,  1,  0} } };
+        m->vertices[0] = (struct vertex){ .pos = { .a = {-w,  tilt, -h} }, .normal = { .a = { 0,  1,  0} } };
+        m->vertices[1] = (struct vertex){ .pos = { .a = {-w,  tilt,  h} }, .normal = { .a = { 0,  1,  0} } };
         m->vertices[2] = (struct vertex){ .pos = { .a = { w,  0,  h} }, .normal = { .a = { 0,  1,  0} } };
         m->vertices[3] = (struct vertex){ .pos = { .a = { w,  0, -h} }, .normal = { .a = { 0,  1,  0} } };
 

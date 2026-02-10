@@ -26,6 +26,8 @@ struct particle
         struct vec3 a;
         // Rotation around each axis, in radians
         struct vec3 r;
+        // Bounding sphere radius (0 = point particle)
+        float rad;
 };
 
 struct object

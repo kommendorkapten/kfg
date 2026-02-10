@@ -34,11 +34,6 @@ void update_objects(int step,
         {
                 struct object* o = objs + i;
 
-                if (o->steady_state)
-                {
-                        continue;
-                }
-
                 update_object(step, w, o);
 
                 if (print)
@@ -54,6 +49,11 @@ void update_object(int step, struct world* w, struct object* o)
         struct vec3 new_pos;
         struct vec3 f;
         int coll = 0;
+
+        if (o->steady_state)
+        {
+                return;
+        }
 
         (void)step;
 
@@ -108,10 +108,39 @@ void update_object(int step, struct world* w, struct object* o)
                           if a collision happens, it's measured in
                           units of the length, which is the current
                           step's computed velocity. The point of
-                          intersection must be in this step
+                          intersection must be in this step.
+                          For a sphere (radius > 0), the surface is
+                          reached when the center is still radius
+                          away, so we allow t up to
+                          1 + radius / |displacement|.
                         */
-                        if (coll_test && t <= 1.0f)
+                        if (coll_test)
                         {
+                                float inv_disp_len = km_rsqrt(
+                                        vec3_dot(&p.v, &p.v));
+                                float t_max = 1.0f;
+                                if (inv_disp_len < 1e5f &&
+                                    o->p.rad > 0.0f) {
+                                        t_max += o->p.rad * inv_disp_len;
+                                }
+
+                                if (t > t_max)
+                                {
+                                        // too far away
+                                        continue;
+                                }
+
+                                // Before updating the velocity move the
+                                // object to the surface.
+                                // The distance is t if radius is zero,
+                                // t_max - t if radius is > 0
+                                if (o->p.rad > 0.0f)
+                                {
+                                        t = t_max - t;
+                                }
+                                struct vec3 v = vec3_scalarm(&p.v, t);
+                                o->p.p = vec3_add(&o->p.p, &v);
+
                                 float rc = sqrtf(m->restitution *
                                                  o->restitution);
 
