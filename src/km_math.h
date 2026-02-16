@@ -42,7 +42,6 @@ struct vec4
         };
 };
 
-
 extern struct vec3 vec3_add(const struct vec3*, const struct vec3*);
 extern struct vec3 vec3_sub(const struct vec3*, const struct vec3*);
 extern struct vec3 vec3_scalarm(const struct vec3*, float);

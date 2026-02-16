@@ -11,10 +11,15 @@ struct animation {
         float speed;
 };
 
+struct entity;
+
+typedef void (*animate_fn)(struct entity* e, float dt);
+
 struct entity
 {
         struct object o;
         struct animation a;
+        animate_fn animate;
         struct mesh* surfaces;
         int surface_count;
 };
@@ -36,5 +41,23 @@ struct scene
         struct entity* entities;
         int entity_count;
 };
+
+/**
+ * Animate rotation around the X axis.
+ * Uses the entity's animation speed as angular velocity (rad/s).
+ */
+void animate_rot_x(struct entity* e, float dt);
+
+/**
+ * Animate rotation around the Y axis.
+ * Uses the entity's animation speed as angular velocity (rad/s).
+ */
+void animate_rot_y(struct entity* e, float dt);
+
+/**
+ * Animate rotation around the Z axis.
+ * Uses the entity's animation speed as angular velocity (rad/s).
+ */
+void animate_rot_z(struct entity* e, float dt);
 
 #endif /* KM_SCENE_H */

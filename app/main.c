@@ -32,8 +32,11 @@ int main(int argc, char *argv[])
         struct renderer  *renderer = NULL;
         int fullscreen = 0;
         int verbose    = 0;
+        const char* world_file = "mesh.json";
+        const char* water_file = "water.json";
         Uint64 now, last;
         float margin = 0.002f; // margin for vsync during sleep
+        int slowmo = 1;
 
         input.width = KM_DEFAULT_WIDTH;
         input.height = KM_DEFAULT_HEIGHT;
@@ -49,6 +52,10 @@ int main(int argc, char *argv[])
                 else if (strcmp(argv[i], "-v") == 0)
                 {
                         verbose = 1;
+                }
+                else if (strcmp(argv[i], "-w") == 0 && i + 1 < argc)
+                {
+                        world_file = argv[++i];
                 }
                 else if (strcmp(argv[i], "--width") == 0 && i + 1 < argc)
                 {
@@ -87,32 +94,46 @@ int main(int argc, char *argv[])
         }
 
         // Setup camera
-        scene.cam.pos = (struct vec3){ .a = { 0.0f, 0.4f, 15.0f } };
+        scene.cam.pos = (struct vec3){ .a = { 0.0f, 8.4f, 15.0f } };
         scene.cam.center = (struct vec3){ .a = { 0.0f, 0.0f, 0.0f } };
         scene.cam.up = (struct vec3){ .a = { 0.0f, 1.0f, 0.0f } };
 
         // Setup static meshes
-        scene.w.surfaces = malloc(1 * sizeof(struct mesh));
-        scene.w.surface_count = 1;
-        init_plane(scene.w.surfaces, 10.0f, 10.0f);
+        scene.w.surfaces = load_meshes(world_file, &scene.w.surface_count);
+        if (scene.w.surfaces)
+        {
+                struct vec3 level = (struct vec3){ .a = {0.0f, -1.0f, 0.0f } };
+                mesh_translate(scene.w.surfaces, &level);
+        }
 
-        // Setup dynamic meshes
+        scene.w.waters = load_meshes(water_file, &scene.w.water_count);
+
+        struct water w;
+        init_water(&w, scene.w.waters, scene.w.surfaces);
+
+        mesh_colorize_water(scene.w.waters);
+
+        // Setup dynamic objects
         scene.entities = malloc(1 * sizeof(struct entity));
         scene.entity_count = 1;
 
         // Entity 1
-        memset(scene.entities, 0, sizeof(struct entity));
-        scene.entities[0].surfaces = malloc(1 * sizeof(struct mesh));
-        scene.entities[0].surface_count = 1;
-        scene.entities[0].o.p.p.y = 3.0f;
-        scene.entities[0].o.m = 1.0f;
-        scene.entities[0].o.area = 0.3f;
-        scene.entities[0].o.drag_c = 0.47f;
-        scene.entities[0].o.restitution = 0.9f;
-        scene.entities[0].o.p.rad = 1.0f;
+/*         memset(scene.entities, 0, sizeof(struct entity)); */
+/*         scene.entities[0].surfaces = malloc(1 * sizeof(struct mesh)); */
+/* //        scene.entities[0].surface_count = 1; */
+/*         scene.entities[0].o.p.p.y = 3.0f; */
+/*         scene.entities[0].o.m = 1.0f; */
+/*         scene.entities[0].o.area = 0.3f; */
+/*         scene.entities[0].o.drag_c = 0.47f; */
+/*         scene.entities[0].o.restitution = 0.9f; */
+/*         scene.entities[0].o.p.rad = 1.0f; */
+/*         scene.entities[0].a.speed = 0.8f; // 0.2 rad/sec */
+/*         scene.entities[0].animate = &animate_rot_y; */
 
-        init_cube(&scene.entities[0].surfaces[0]);
-
+/* //        init_cube(&scene.entities[0].surfaces[0]); */
+/*         scene.entities[0].surfaces = load_meshes("cube.json", */
+/*                                                  &scene.entities[0].surface_count); */
+        scene.entity_count = 0;
         if (renderer->upload(renderer,
                              scene.w.surfaces, scene.w.surface_count,
                              scene.entities, scene.entity_count) != 0)
@@ -125,8 +146,19 @@ int main(int argc, char *argv[])
                 return 1;
         }
 
-        last = SDL_GetPerformanceCounter();
+        // Create GPU buffers for dynamic water meshes
+        if (renderer->update(renderer,
+                             scene.w.waters, scene.w.water_count, 1) != 0)
+        {
+                fprintf(stderr, "Failed to create dynamic meshes\n");
+                renderer->cleanup(renderer);
+                free(renderer);
+                km_window_destroy(&window);
+                SDL_Quit();
+                return 1;
+        }
 
+        last = SDL_GetPerformanceCounter();
         // go!
         int counter = 0;
         while (!input.quit)
@@ -149,6 +181,7 @@ int main(int argc, char *argv[])
                 now = SDL_GetPerformanceCounter();
                 float dt  = (float)(now - last)
                         / (float)SDL_GetPerformanceFrequency();
+                dt = dt / (float)slowmo;
                 last = now;
 
                 // update objects
@@ -157,12 +190,34 @@ int main(int argc, char *argv[])
                         update_object(1, &scene.w, &scene.entities[i].o);
                 }
 
+                // animate
+                for (int i = 0; i < scene.entity_count; i++)
+                {
+                        if (scene.entities[i].animate)
+                        {
+                                scene.entities[i].animate(&scene.entities[i], dt);
+                        }
+                }
+
+                // Animate environment
+                for (int i = 0; i < scene.w.water_count; i++)
+                {
+                        update_water(&w, scene.w.waters + i, dt);
+                        mesh_colorize_water(scene.w.waters);
+                }
+
+                // Update dynamic mesh GPU data
+                renderer->update(renderer,
+                                 scene.w.waters, scene.w.water_count, 0);
+
                 renderer->render(renderer, &scene, dt);
                 float elapsed = (float)(SDL_GetPerformanceCounter() - last)
                       / (float)SDL_GetPerformanceFrequency();
                 float remaining = scene.w.dt - elapsed - margin;
 
+
                 counter++;
+
                 if (counter == 100)
                 {
                         counter = 0;
@@ -172,7 +227,7 @@ int main(int argc, char *argv[])
                 if (remaining > 0)
                 {
                         ns = (long)(remaining * 1000000000.0f);
-                        timing_sleep(ns);
+                        timing_sleep(ns * slowmo);
                 }
 
                 if (print_step)
@@ -253,7 +308,7 @@ void init_cube(struct mesh* m)
 
        /* Bottom */
         m->indices[18] = 12; m->indices[19] = 13; m->indices[20] = 14;
-        m->indices[21] = 12; m->indices[22] = 15; m->indices[23] = 15;
+        m->indices[21] = 12; m->indices[22] = 14; m->indices[23] = 15;
 
        /* Right  */
         m->indices[24] = 16; m->indices[25] = 17; m->indices[26] = 18;
@@ -274,7 +329,7 @@ void init_plane(struct mesh* m, float w, float h)
 
         w = w / 2.0f;
         h = h / 2.0f;
-        float tilt = -2.0f;
+        float tilt = -1.0f;
 
         m->vertices[0] = (struct vertex){ .pos = { .a = {-w,  tilt, -h} }, .normal = { .a = { 0,  1,  0} } };
         m->vertices[1] = (struct vertex){ .pos = { .a = {-w,  tilt,  h} }, .normal = { .a = { 0,  1,  0} } };

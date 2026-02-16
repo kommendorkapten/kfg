@@ -18,11 +18,13 @@ using namespace metal;
 struct VertexIn {
         float3 position [[attribute(0)]];
         float3 normal   [[attribute(1)]];
+        float4 color    [[attribute(2)]];
 };
 
 struct VertexOut {
         float4 position [[position]];
         float3 world_normal;
+        float4 color;
 };
 
 struct Uniforms {
@@ -31,8 +33,6 @@ struct Uniforms {
         float4x4 projection;
         packed_float3 light_dir;
         float _pad0;
-        packed_float3 object_color;
-        float _pad1;
 };
 
 /* ------------------------------------------------------------------ */
@@ -47,6 +47,7 @@ cube_vertex(VertexIn in [[stage_in]],
         float4 world_pos = u.model * float4(in.position, 1.0);
         out.position     = u.projection * u.view * world_pos;
         out.world_normal = (u.model * float4(in.normal, 0.0)).xyz;
+        out.color        = in.color;
         return out;
 }
 
@@ -64,6 +65,6 @@ cube_fragment(VertexOut in [[stage_in]],
         float ambient = 0.15;
         float diffuse = max(dot(N, L), 0.0);
 
-        float3 color = (ambient + diffuse) * float3(u.object_color);
-        return float4(color, 1.0);
+        float3 color = (ambient + diffuse) * in.color.rgb;
+        return float4(color, in.color.a);
 }

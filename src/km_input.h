@@ -17,6 +17,11 @@ struct km_input
         int mouse_dy;
         int quit;
         int window_resized;
+        int az;
+        // azimuth
+        float theta;
+        // inclination
+        float phi;
 };
 
 /**

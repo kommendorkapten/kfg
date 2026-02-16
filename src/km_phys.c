@@ -10,7 +10,10 @@
 * file and include the License file at http://opensource.org/licenses/CDDL-1.0.
 */
 
+#include <stdio.h>
+#include <stdlib.h>
 #include <math.h>
+#include <string.h>
 #include "km_phys.h"
 #include "km_math.h"
 #include "km_geom.h"
@@ -209,4 +212,106 @@ void quantize_force(struct vec3* f)
         if (fabsf(f->x) < thr) f->x = 0.0f;
         if (fabsf(f->y) < thr) f->y = 0.0f;
         if (fabsf(f->z) < thr) f->z = 0.0f;
+}
+
+void init_water(struct water* w, struct mesh* v, struct mesh* d)
+{
+        float d1 = v->vertices[1].pos.x - v->vertices[0].pos.x;
+        float d2;
+
+        if (d)
+        {
+                d2 = d->vertices[1].pos.x - d->vertices[0].pos.x;
+                printf("should be zero: %f\n", d1 - d2);
+        }
+
+        w->h = d1;
+        w->d = d;
+
+        printf("h: %f\n", w->h);
+
+        w->c = 1.5f; // wave propagation of 2.5m/s
+        w->z = malloc(v->vertex_count * sizeof(struct vertex));
+
+        // copy the vertices as is
+        memcpy(w->z, v->vertices, v->vertex_count * sizeof(struct vertex));
+
+        // Find the stride, this only works if the mesh is generated
+        // via gen_mesh
+        float zo = v->vertices[0].pos.z;
+        for (int i = 1; i < v->vertex_count; i++)
+        {
+                // find the first vertex that advances the z coordinate
+                if (v->vertices[i].pos.z > zo)
+                {
+                        w->nx = i;
+                        w->ny = v->vertex_count / i;
+                        printf("nx %d ny %d\n", w->nx, w->ny);
+                        printf("num vertices %d (%d)\n", v->vertex_count,
+                                w->nx * w->ny);
+
+                        break;
+                }
+        }
+}
+
+void update_water(struct water* w, struct mesh* v, float dt)
+{
+        struct vertex* tmp;
+        float a = (w->c * dt) / w->h;
+        float b;
+        float s;
+
+        a = a * a;
+        b = 2.0f - 4.0f * a;
+
+        s = w->c * w->c * dt * dt;
+        s = s / (w->h * w->h);
+
+        if (s > 0.5f)
+        {
+                printf("instability detected using explicit integration\n");
+                printf("a: %f b: %f c: %f dt: %f h: %f\n",
+                       a, b, w->c, dt, w->h);
+                return;
+        }
+
+        // swap vertex pointers
+        tmp = w->z;
+        w->z = v->vertices;
+        v->vertices = tmp;
+
+        for (int y = 1; y < w->ny - 1; y++)
+        {
+                for (int x = 1; x < w->nx - 1; x++)
+                {
+                        float new =
+                                a * (w->z[(y-1) * w->nx + x].pos.y +
+                                     w->z[(y+1) * w->nx + x].pos.y +
+                                     w->z[y * w->nx + x - 1].pos.y +
+                                     w->z[y * w->nx + x + 1].pos.y);
+                        float new2 = b * w->z[y * w->nx + x].pos.y -
+                                v->vertices[y * w->nx + x].pos.y;
+                        new += new2;
+
+                        float gh = w->d->vertices[y * w->nx + x].pos.y;
+
+                        float d;
+
+                        if (gh > 0.299f)
+                        {
+                                d = 0.0f;
+                        }
+                        else if (gh < -0.2999f)
+                        {
+                                d = 1.0f;
+                        }
+                        else
+                        {
+                                d = -0.6f * gh + 0.5f;
+                        }
+
+                        v->vertices[y * w->nx + x].pos.y = d * new;
+                }
+        }
 }

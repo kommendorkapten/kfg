@@ -30,8 +30,6 @@ struct uniforms
         float projection[16];
         struct vec3 light_dir;
         float _pad0;
-        struct vec3 object_color;
-        float _pad1;
 };
 
 /* ------------------------------------------------------------------ */
@@ -58,6 +56,7 @@ struct uniforms
 @property (nonatomic, strong) id<MTLRenderPipelineState> pipelineState;
 @property (nonatomic, strong) id<MTLDepthStencilState>   depthStencilState;
 @property (nonatomic, strong) NSMutableArray<GpuMesh *> *staticGpuMeshes;
+@property (nonatomic, strong) NSMutableArray<GpuMesh *> *dynamicGpuMeshes;
 @property (nonatomic, strong) NSMutableArray<NSMutableArray<GpuMesh *> *> *entityGpuMeshes;
 @property (nonatomic, strong) CAMetalLayer              *metalLayer;
 @property (nonatomic)         SDL_MetalView              metalView;
@@ -165,7 +164,11 @@ static int metal_init(struct renderer *r, SDL_Window *window, int w, int h)
         vd.attributes[1].format      = MTLVertexFormatFloat3;
         vd.attributes[1].offset      = 12;
         vd.attributes[1].bufferIndex = 0;
-        vd.layouts[0].stride         = 24;
+        /* color:    float4 at offset 24 */
+        vd.attributes[2].format      = MTLVertexFormatFloat4;
+        vd.attributes[2].offset      = 24;
+        vd.attributes[2].bufferIndex = 0;
+        vd.layouts[0].stride         = 40;
         vd.layouts[0].stepFunction   = MTLVertexStepFunctionPerVertex;
 
         /* ---- Render pipeline ---- */
@@ -196,6 +199,7 @@ static int metal_init(struct renderer *r, SDL_Window *window, int w, int h)
 
         /* ---- Mesh arrays (populated later via upload) ---- */
         ctx.staticGpuMeshes = [[NSMutableArray alloc] init];
+        ctx.dynamicGpuMeshes = [[NSMutableArray alloc] init];
         ctx.entityGpuMeshes = [[NSMutableArray alloc] init];
 
         /* ---- Depth texture ---- */
@@ -268,6 +272,40 @@ static int metal_upload(struct renderer *r,
 }
 
 /* ------------------------------------------------------------------ */
+/* Update dynamic meshes                                               */
+/* ------------------------------------------------------------------ */
+
+static int metal_update(struct renderer *r,
+                        const struct mesh *meshes, int count, int create)
+{
+        MetalContext *ctx = (__bridge MetalContext *)r->ctx;
+
+        if (create)
+        {
+                [ctx.dynamicGpuMeshes removeAllObjects];
+                for (int i = 0; i < count; i++)
+                {
+                        GpuMesh *gm = upload_one_mesh(ctx.device, &meshes[i]);
+                        [ctx.dynamicGpuMeshes addObject:gm];
+                }
+                fprintf(stdout, "Created %d dynamic GPU mesh(es)\n", count);
+        }
+        else
+        {
+                for (int i = 0; i < count; i++)
+                {
+                        GpuMesh *gm = ctx.dynamicGpuMeshes[(NSUInteger)i];
+                        NSUInteger vsize = meshes[i].vertex_count
+                                * sizeof(struct vertex);
+                        memcpy(gm.vertexBuffer.contents,
+                               meshes[i].vertices, vsize);
+                }
+        }
+
+        return 0;
+}
+
+/* ------------------------------------------------------------------ */
 /* Render                                                              */
 /* ------------------------------------------------------------------ */
 
@@ -310,12 +348,6 @@ static void metal_render(struct renderer *r, struct scene* scene, float dt)
                 u.light_dir.z = -0.4082f;
                 u._pad0        =  0.0f;
 
-                /* Object colour – pleasant blue */
-                u.object_color.x = 0.3f;
-                u.object_color.y = 0.6f;
-                u.object_color.z = 0.8f;
-                u._pad1           = 0.0f;
-
                 /* ---- Acquire drawable ---- */
                 id<CAMetalDrawable> drawable =
                         [ctx.metalLayer nextDrawable];
@@ -353,6 +385,11 @@ static void metal_render(struct renderer *r, struct scene* scene, float dt)
                 /* ---- Draw static meshes (identity model matrix) ---- */
                 mat4_identity(u.model);
                 for (GpuMesh *gm in ctx.staticGpuMeshes) {
+                        draw_mesh(enc, gm, &u);
+                }
+
+                /* ---- Draw dynamic meshes (identity model matrix) ---- */
+                for (GpuMesh *gm in ctx.dynamicGpuMeshes) {
                         draw_mesh(enc, gm, &u);
                 }
 
@@ -423,6 +460,7 @@ struct renderer* metal_renderer_create(void)
 
         r->init    = metal_init;
         r->upload  = metal_upload;
+        r->update  = metal_update;
         r->render  = metal_render;
         r->resize  = metal_resize;
         r->cleanup = metal_cleanup;

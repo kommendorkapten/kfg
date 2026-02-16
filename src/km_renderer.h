@@ -27,6 +27,8 @@ struct renderer {
         int  (*upload)(struct renderer *r,
                        const struct mesh *static_meshes, int static_count,
                        const struct entity *entities, int entity_count);
+        int  (*update)(struct renderer *r,
+                       const struct mesh *meshes, int count, int create);
         void (*render)(struct renderer *r, struct scene* s, float dt);
         void (*resize)(struct renderer *r, int width, int height);
         void (*cleanup)(struct renderer *r);

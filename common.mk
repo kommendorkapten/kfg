@@ -7,7 +7,7 @@ OBJCFLAGS = -D_POSIX_C_SOURCE=200809L \
          -Wall -W -Wextra -Wconversion -Wsign-conversion -Werror \
          -pedantic -O2 \
          -fobjc-arc
-
+#DEBUG=1
 LDFLAGS =
 LIBS =
 

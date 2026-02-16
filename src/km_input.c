@@ -1,15 +1,23 @@
 #include <SDL.h>
 #include <stdio.h>
+#include <math.h>
 #include "km_input.h"
 #include "km_scene.h"
+#include "km_math.h"
+
+static const float ARROW_MOV = 0.314f;
+static const float MOUSE_SCALE = 10.0f;
 
 int km_process_input(struct km_input *input, struct scene* scene)
 {
+        struct vec3 d;
         SDL_Event event;
+        float r;
 
         input->mouse_dx       = 0;
         input->mouse_dy       = 0;
         input->window_resized = 0;
+        input->az             = 0;
 
         while (SDL_PollEvent(&event))
         {
@@ -20,28 +28,56 @@ int km_process_input(struct km_input *input, struct scene* scene)
                         return 0;
 
                 case SDL_KEYDOWN:
+
+                        d = vec3_sub(&scene->cam.pos,
+                                     &scene->cam.center);
+                        r = sqrtf(vec3_dot(&d, &d));
+
                         switch (event.key.keysym.sym)
                         {
                         case SDLK_ESCAPE:
                                 input->quit = 1;
                                 return 0;
                         case SDLK_UP:
-                                scene->cam.pos.z -= 0.2f;
+                                input->phi += ARROW_MOV;
                                 break;
                         case SDLK_DOWN:
-                                scene->cam.pos.z += 0.2f;
+                                input->phi -= ARROW_MOV;
                                 break;
                         case SDLK_LEFT:
-                                scene->cam.pos.x -= 0.2f;
+                                input->theta += ARROW_MOV;
                                 break;
                         case SDLK_RIGHT:
-                                scene->cam.pos.x += 0.2f;
+                                input->theta -= ARROW_MOV;
                                 break;
                         default:
                                 break;
                         }
-                        break;
 
+                        // Prevent rotating onto the y-axis as the
+                        // camera's up vector is the y-axis.
+                        if (input->phi > M_PI)
+                        {
+                                input->phi = (float)M_PI - 0.001f;
+                        }
+                        if (input->phi < 0.001)
+                        {
+                                input->phi = 0.001f;
+                        }
+
+                        // Calculate new camera position
+                        scene->cam.pos.x = r * sinf(input->phi) *
+                                cosf(input->theta);
+                        scene->cam.pos.y = r * cosf(input->phi);
+                        scene->cam.pos.z = r * sinf(input->phi) *
+                                sinf(input->theta);
+
+                        if (event.key.keysym.sym >= SDLK_a &&
+                            event.key.keysym.sym <= SDLK_z)
+                        {
+                                input->az = event.key.keysym.sym;
+                        }
+                        break;
                 case SDL_MOUSEMOTION:
                 {
                         int prev_x = input->mouse_x;
@@ -51,6 +87,17 @@ int km_process_input(struct km_input *input, struct scene* scene)
                         input->mouse_y  = event.motion.y;
                         input->mouse_dx = input->mouse_x - prev_x;
                         input->mouse_dy = input->mouse_y - prev_y;
+
+                        if (event.motion.state & SDL_BUTTON_LMASK)
+                        {
+                                scene->cam.center.x -= MOUSE_SCALE *
+                                        ((float)input->mouse_dx /
+                                         (float)input->width);
+
+                                scene->cam.center.y -= MOUSE_SCALE *
+                                        ((float)input->mouse_dy /
+                                         (float)input->height);
+                        }
                         break;
                 }
 

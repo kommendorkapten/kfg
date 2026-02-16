@@ -49,6 +49,7 @@ struct vertex
 {
         struct vec3 pos;
         struct vec3 normal;
+        struct vec4 color;
 };
 
 /*
@@ -64,6 +65,10 @@ struct mesh
         float restitution;
         uint16_t vertex_count;
         uint16_t index_count;
+        // If the mesh is rectangle, these are the number of vertices
+        // in each direction.
+        uint16_t grid_x;
+        uint16_t grid_z;
 };
 
 /**
@@ -72,6 +77,13 @@ struct mesh
  * @return void
  */
 void print_particle(const struct particle* p);
+
+/**
+ * Print a vertex to stdout
+ * @param v the vertex to print
+ * @return void
+ */
+void print_vertex(const struct vertex* v);
 
 /**
  * Load a triangle (CCW) from the mesh
@@ -121,6 +133,57 @@ void collide_particle(struct particle* p,
                       struct vec3* restrict v1,
                       struct vec3* restrict v2,
                       float rc);
+
+/**
+ * Read the provided json file, and return an array of meshes.
+ * @param p the path to the JSON file to read.
+ * @param count the number of meshes read and returned
+ * @return pointer to the meshes, or NULL if read failed.
+ */
+struct mesh* load_meshes(const char* p, int* count);
+
+/**
+ * Write an array of meshes to a JSON file.
+ * @param p the path to the output JSON file.
+ * @param meshes pointer to the array of meshes to write.
+ * @param count the number of meshes in the array.
+ * @return 0 on success, -1 on failure.
+ */
+int write_meshes(const char* p, const struct mesh* meshes, int count);
+
+struct mesh* gen_mesh(float x, float y, float d);
+
+void mesh_normalize(struct mesh* m);
+
+void mesh_translate(struct mesh* m, struct vec3* v);
+
+/**
+ * Generate a heightmap on a mesh using scattered peaks with falloff.
+ * @param m the mesh to apply heights to
+ * @param peaks the number of random peaks to generate
+ * @param max_height maximum height of any single peak
+ * @param radius the influence radius of each peak
+ * @return void
+ */
+void mesh_heightmap(struct mesh* m, int peaks, float max_height, float radius);
+
+/**
+ * Colorize a mesh based on vertex height (y).
+ * Applies a smooth gradient from dark (low) through green,
+ * brown, to sand (high).
+ * @param m the mesh to colorize
+ * @return void
+ */
+void mesh_colorize(struct mesh* m);
+
+/**
+ * Colorize a mesh with water colors based on vertex height (y).
+ * Applies a smooth gradient from deep blue (low) through
+ * ocean blue to light cyan (high).
+ * @param m the mesh to colorize
+ * @return void
+ */
+void mesh_colorize_water(struct mesh* m);
 
 /**
  * Free all memory held by a mesh.

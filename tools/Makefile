@@ -9,21 +9,16 @@ FRAMEWORKS = -framework Metal      \
              -framework CoreGraphics
 
 CFLAGS    += $(SDL_CFLAGS) -I../src
-OBJCFLAGS += $(SDL_CFLAGS) -I../src
 LDFLAGS    = $(SDL_LDFLAGS) $(FRAMEWORKS)
 
-TARGET = km_app
+TARGET = gen_mesh
 
 DEPS = ../src/objs/km_geom.o \
 	../src/objs/km_math.o \
-	../src/objs/km_phys.o \
-	../src/objs/timing.o \
-	../src/objs/metal_renderer.o \
-        ../src/objs/km_input.o \
-	../src/objs/timing.o \
+	../src/objs/km_input.o \
 	../src/objs/km_mat4.o \
 	../src/objs/km_window.o \
-	../src/objs/km_scene.o \
+	../src/objs/metal_renderer.o \
 	../lib/objs/cJSON.o
 
 all: objs $(TARGET)
@@ -36,6 +31,6 @@ $(TARGET): $(OBJS) $(DEPS)
 	cp ../src/objs/shaders.metallib .
 
 clean:
-	rm -rf objs $(TARGET) shaders.metallib
+	rm -rf objs $(TARGET)
 
 .PHONY: all clean
