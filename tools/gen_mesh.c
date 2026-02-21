@@ -19,14 +19,14 @@ int main(int argc, char* argv[])
         struct renderer  *renderer = NULL;
         Uint64 now, last;
         int fullscreen = 0;
-        float w = 20.0f;
-        float h = 20.0f;
+        float w = 30.0f;
+        float h = 30.0f;
         float d = 0.5f;
         const char* output = "mesh.json";
         const char* input_file = NULL;
         int num_peaks = 5;
-        int height = 5.0f;
-        int radius = 7.0f;
+        int height = 1.0f;
+        int radius = 10.0f;
         int opt;
 
         srand((unsigned)time(NULL));
@@ -88,7 +88,7 @@ int main(int argc, char* argv[])
         }
 
         // Setup camera
-        scene.cam.pos = (struct vec3){ .a = { 0.0f, 8.0f, 15.0f } };
+        scene.cam.pos = (struct vec3){ .a = { 0.0f, 10.0f, 30.0f } };
         scene.cam.center = (struct vec3){ .a = { 0.0f, 0.0f, 0.0f } };
         scene.cam.up = (struct vec3){ .a = { 0.0f, 1.0f, 0.0f } };
         struct vec3 cd = vec3_sub(&scene.cam.pos, &scene.cam.center);

@@ -217,18 +217,9 @@ void quantize_force(struct vec3* f)
 void init_water(struct water* w, struct mesh* v, struct mesh* d)
 {
         float d1 = v->vertices[1].pos.x - v->vertices[0].pos.x;
-        float d2;
-
-        if (d)
-        {
-                d2 = d->vertices[1].pos.x - d->vertices[0].pos.x;
-                printf("should be zero: %f\n", d1 - d2);
-        }
 
         w->h = d1;
         w->d = d;
-
-        printf("h: %f\n", w->h);
 
         w->c = 1.5f; // wave propagation of 2.5m/s
         w->z = malloc(v->vertex_count * sizeof(struct vertex));
@@ -246,9 +237,6 @@ void init_water(struct water* w, struct mesh* v, struct mesh* d)
                 {
                         w->nx = i;
                         w->ny = v->vertex_count / i;
-                        printf("nx %d ny %d\n", w->nx, w->ny);
-                        printf("num vertices %d (%d)\n", v->vertex_count,
-                                w->nx * w->ny);
 
                         break;
                 }
