@@ -10,11 +10,18 @@ int main(void)
         struct vec3 v0 = { .a = { -1.0f, 0.0f, -2.0f } };
         struct vec3 v1 = { .a = { -1.0f, 0.0f, 1.0f } };
         struct vec3 v2 = { .a = { 2.0f, 0.0f, 1.0f } };
+        struct vec3 e1, e2;
+        struct vec3 n;
         struct particle p = {0};
         float t;
         float u;
         float v;
         int coll;
+
+        e1 = vec3_sub(&v1, &v0);
+        e2 = vec3_sub(&v2, &v0);
+
+        n = vec3_cross(&e1, &e2);
 
         // Test that a particle collides
         p.v = (struct vec3){ .a = { 0.0f, -1.0f, 0.0f } };
@@ -99,13 +106,30 @@ int main(void)
                 fail = 1;
         }
 
+        // Verify that a particle at the surface will not collide
+        p.p.y = v0.y;
+        p.v.y = -0.5f;
+        coll = ray_tri_intersect(&p, &v0, &v1, &v2, &t, &u, &v);
+
+        if (coll)
+        {
+                print_particle(&p);
+                printf("should not have collided\n");
+                fail = 1;
+        }
+        if (t > 0.0001)
+        {
+                printf("unexpected t: %f\n", t);
+                fail = 1;
+        }
+
         // Verify that the collision response is correct
         p.p.y = 0.1f;
         p.v.x = 1.0;
         p.v.y = -1.0f;
         p.v.z = 1.0f;
 
-        collide_particle(&p, &v0, &v1, &v2, 1.0f);
+        collide_particle(&p, &n, 1.0f);
         // with restitution constant of 1.0f, the v.y component should be
         // negated, x and z should be unaffected
         if (fabsf(p.v.y - 1.0f) > 0.001)
@@ -122,14 +146,14 @@ int main(void)
         // Particle is now moving away from surface,
         // colide again, should print error message
         printf("Expected error message\n");
-        collide_particle(&p, &v0, &v1, &v2, 1.0f);
+        collide_particle(&p, &n, 1.0f);
 
         p.p.y = 0.1f;
         p.v.x = 1.0;
         p.v.y = -1.0f;
         p.v.z = 1.0f;
 
-        collide_particle(&p, &v0, &v1, &v2, 0.5f);
+        collide_particle(&p, &n, 0.5f);
         // with restitution constant of 0.5f, the v.y component should be
         // negated and halfed, x and z should be unaffected
         if (fabsf(p.v.y - 0.5f) > 0.001)
@@ -146,6 +170,10 @@ int main(void)
         if (fail)
         {
                 printf("test failed\n");
+        }
+        else
+        {
+                printf("test successful\n");
         }
 
         return fail;

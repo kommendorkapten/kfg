@@ -8,13 +8,15 @@
 
 int free_fall(int, int);
 int with_drag(int, int, float);
+int upwards(int);
+int bounce(int);
 
 int main(void)
 {
         int fail = 0;
         // Only run shorter simulations. The accumulated error when using
         // float builds up over time (that is, the number of steps).
-
+#if 0
         // 1 minute, 60hz
         fail = fail || free_fall(60, 60);
         // 1 minute, 100hz
@@ -32,6 +34,12 @@ int main(void)
         fail = fail || with_drag(5, 100, 45.251652f);
         fail = fail || with_drag(10, 60, 98.561859f);
         fail = fail || with_drag(10, 100, 98.561859f);
+
+        fail = fail || upwards(60);
+        fail = fail || upwards(100);
+#endif
+        fail = fail || bounce(60);
+//        fail = fail || bounce(100);
 
         if (fail)
         {
@@ -145,6 +153,116 @@ int with_drag(int duration, int freq, float exp_p)
                 printf("expected position %f got %f d: %f\n",
                        exp_p, o.p.p.y, fabsf(o.p.p.y) - exp_p);
                 ret = 1;
+        }
+
+        return ret;
+}
+
+int upwards(int freq)
+{
+        struct world w;
+        struct object o = {0};
+        struct vec3 f;
+        int step;
+        int ret = 0;
+        float vstart = 0.726153f;
+
+        o.p.p.y = 0.0f;
+        o.m = 1.0f;
+        o.area = 0.3f;
+        o.drag_c = 0.47f;
+
+        w.g = (struct vec3){ .a = { 0.0f, -KM_PHYS_G, 0.0f } };
+        w.dt = 1.0f / (float)freq;
+        w.air_density = KM_PHYS_AIR_DENS;
+        w.surface_count = 0;
+
+        // init force
+        f.x = o.m * w.g.x;
+        f.y = o.m * w.g.y;
+        f.z = o.m * w.g.z;
+
+        drag_force(&f, &w, &o);
+
+        // compute new accelerations
+        o.p.a.x = f.x / o.m;
+        o.p.a.y = f.y / o.m;
+        o.p.a.z = f.z / o.m;
+
+        // init velocity
+        o.p.v.y = vstart;
+
+        for (step = 0; ; step++)
+        {
+                update_object(step, &w, &o);
+
+                if (o.p.p.y + w.dt * o.p.v.y < 0.0f)
+                {
+                        if (o.p.v.y > fabsf(vstart))
+                        {
+                                ret = 1;
+                        }
+
+                        break;
+                }
+        }
+
+        return ret;
+}
+
+int bounce(int freq)
+{
+        struct world w;
+        struct object o = {0};
+        struct vec3 f;
+        int step = 0;
+        int ret = 0;
+        float vstart = 0.247399f;
+        float pstart = -1.999002f;
+
+        o.p.p.y = 0.0f;
+        o.m = 1.0f;
+        o.area = 0.3f;
+        o.drag_c = 0.47f;
+
+        w.g = (struct vec3){ .a = { 0.0f, -KM_PHYS_G, 0.0f } };
+        w.dt = 1.0f / (float)freq;
+        w.air_density = KM_PHYS_AIR_DENS;
+        w.surface_count = 0;
+
+        // init force
+        f.x = o.m * w.g.x;
+        f.y = o.m * w.g.y;
+        f.z = o.m * w.g.z;
+
+        drag_force(&f, &w, &o);
+
+        // init acceleration
+        o.p.a.x = 0.0f;
+        o.p.a.y = -9.827365f;
+        o.p.a.z = 0.0f;
+
+        // init pos
+        o.p.p.x = 0.0f;
+        o.p.p.y = pstart;
+        o.p.p.z = 0.0f;
+
+        // init velocity
+        o.p.v.x = 0.0f;
+        o.p.v.y = vstart;
+        o.p.v.z = 0.0f;
+
+        update_object(step, &w, &o);
+        update_object(step, &w, &o);
+        update_object(step, &w, &o);
+        update_object(step, &w, &o);
+
+        float dp = o.p.p.y - pstart;
+
+        if (dp > 0)
+        {
+                ret = 1;
+                printf("travelled too far\n");
         }
 
         return ret;

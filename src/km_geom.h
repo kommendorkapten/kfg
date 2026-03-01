@@ -26,6 +26,8 @@ struct particle
         struct vec3 a;
         // Rotation around each axis, in radians
         struct vec3 r;
+        // Any force acting on the particle
+        struct vec3 f;
         // Bounding sphere radius (0 = point particle)
         float rad;
 };
@@ -43,6 +45,10 @@ struct object
         char steady_state;
         // restitution constant for collisions
         float restitution;
+        // static friction coefficient
+        float static_mu;
+        // dynamic friction coefficient
+        float dynamic_mu;
 };
 
 struct vertex
@@ -63,6 +69,10 @@ struct mesh
         struct vertex* vertices;
         uint16_t* indices;
         float restitution;
+        // static friction coefficient
+        float static_mu;
+        // dynamic friction coefficient
+        float dynamic_mu;
         uint16_t vertex_count;
         uint16_t index_count;
         // If the mesh is rectangle, these are the number of vertices
@@ -122,16 +132,14 @@ int ray_tri_intersect(const struct particle* r,
  * The particle's velocity is updated to bounce back in the direction
  * of the normal of the triangle, scaled with the provided restitution.
  * @param p the particle to collide
- * @param v0 the first vertex of the triangle (CCW)
- * @param v1 the second vertex of the triangle
- * @param v2 the third vertex of the triangle
+ * @param n the collision normal
+ * @param vn the velocity of the particle across the collision normal
  * @param rc the combined restitution coefficent (prefer geometric mean)
  * @return void
  */
 void collide_particle(struct particle* p,
-                      struct vec3* restrict v0,
-                      struct vec3* restrict v1,
-                      struct vec3* restrict v2,
+                      struct vec3* n,
+                      float vn,
                       float rc);
 
 /**

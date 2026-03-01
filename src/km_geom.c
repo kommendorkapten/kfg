@@ -97,30 +97,20 @@ int ray_tri_intersect(const struct particle* r,
 }
 
 void collide_particle(struct particle* p,
-                      struct vec3* restrict v0,
-                      struct vec3* restrict v1,
-                      struct vec3* restrict v2,
+                      struct vec3* n,
+                      float vn,
                       float rc)
 {
-        struct vec3 e1 = vec3_sub(v1, v0);
-        struct vec3 e2 = vec3_sub(v2, v0);
-        struct vec3 n = vec3_cross(&e1, &e2);
-
-        n = vec3_norm(&n);
-        float vn = vec3_dot(&p->v, &n);
-
         if (vn > 0.0)
         {
-                printf("p.p %f %f %f\n", p->p.x, p->p.y, p->p.z);
-                printf("p.v %f %f %f\n", p->v.x, p->v.y, p->v.z);
-                printf("n %f %f %f\n", n.x, n.y, n.z);
-                printf("v0 %f %f %f\n", v0->x, v0->y, v0->z);
-                printf("v1 %f %f %f\n", v1->x, v1->y, v1->z);
-                printf("v2 %f %f %f\n", v2->x, v2->y, v2->z);
-
                 // object is moving away from the surface
                 // should never happen
-                printf("WARNING: collision when moving away from a surface\n");
+                printf("WARNING: collision when moving away from a surface vn: %f \n", vn);
+
+                printf("p.p %f %f %f\n", p->p.x, p->p.y, p->p.z);
+                printf("p.v %f %f %f\n", p->v.x, p->v.y, p->v.z);
+                printf("n %f %f %f\n", n->x, n->y, n->z);
+
                 return;
         }
 
@@ -128,8 +118,9 @@ void collide_particle(struct particle* p,
         // Compute the scaling factor with the restitution, and
         // reduce speed in the scaled normal's direction
         float factor = (1.0f + rc) * vn;
-        n = vec3_scalarm(&n, factor);
-        p->v = vec3_sub(&p->v, &n);
+
+        struct vec3 ns = vec3_scalarm(n, factor);
+        p->v = vec3_sub(&p->v, &ns);
 }
 
 void mesh_free(struct mesh* m)

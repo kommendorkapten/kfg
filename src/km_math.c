@@ -10,7 +10,9 @@
 * file and include the License file at http://opensource.org/licenses/CDDL-1.0.
 */
 
+#include <stdio.h>
 #include <stdint.h>
+#include <math.h>
 #include "km_math.h"
 
 _Static_assert(sizeof(struct vec3) == 12, "vec3 must be 12 bytes");
@@ -53,7 +55,11 @@ struct vec3 vec3_scalarm(const struct vec3* restrict v, float s)
 
 struct vec3 vec3_norm(const struct vec3* v)
 {
-        float rsq = km_rsqrt(vec3_dot(v, v));
+        // try with rsqrt intrinsic + one NR, should give same precision
+        // float x = vec3_dot(v, v)
+        // float rsq = __builtin_ia32_rsqrtss(dot);
+        // return rsq * (1.5f - 0.5f * x * rsq * rsq)
+        float rsq = 1.0f / sqrtf(vec3_dot(v, v));
         return vec3_scalarm(v, rsq);
 }
 
@@ -89,4 +95,19 @@ float km_rsqrt(float x)
         conv.f *= 1.5f - (0.5f * x * conv.f * conv.f);
 
         return conv.f;
+}
+
+void vec3_print(struct vec3 v)
+{
+        printf("x:%f y:%f z:%f\n", v.x, v.y, v.z);
+}
+
+int vec3_iszero(struct vec3 v)
+{
+        if (vec3_dot(&v, &v) < 1e-8f)
+        {
+                return 1;
+        }
+
+        return 0;
 }

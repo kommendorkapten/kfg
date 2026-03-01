@@ -14,6 +14,7 @@
 
 void init_cube(struct mesh* m);
 void init_plane(struct mesh* m, float w, float h, int tilt);
+void init_vert_plane(struct mesh* m, float x);
 
 int main(int argc, char* argv[])
 {
@@ -75,13 +76,26 @@ int main(int argc, char* argv[])
         }
 
         // Setup camera
-        scene.cam.pos = (struct vec3){ .a = { 0.0f, 8.0f, 15.0f } };
-        scene.cam.center = (struct vec3){ .a = { 0.0f, 0.0f, 0.0f } };
+        scene.cam.pos = (struct vec3){ .a = { -5.0f, 1.0f, 15.0f } };
+        scene.cam.center = (struct vec3){ .a = { -5.0f, 0.0f, 0.0f } };
         scene.cam.up = (struct vec3){ .a = { 0.0f, 1.0f, 0.0f } };
 
-        scene.w.surfaces = malloc(1 * sizeof(struct mesh));
-        scene.w.surface_count = 1;
-        init_plane(scene.w.surfaces, 10.0f, 10.0f, tilt);
+        struct vec3 cd = vec3_sub(&scene.cam.pos, &scene.cam.center);
+        float r = sqrtf(vec3_dot(&cd, &cd));
+        input.phi = acosf(cd.y / r);
+        input.theta = atan2f(cd.z, cd.x);
+
+        scene.w.surface_count = 3;
+        scene.w.surfaces = malloc((unsigned int)scene.w.surface_count *
+                                  sizeof(struct mesh));
+        init_plane(&scene.w.surfaces[0], 10.0f, 10.0f, tilt);
+        init_plane(&scene.w.surfaces[1], 20.0f, 10.0f, 0);
+        for (int i = 0; i < scene.w.surfaces[1].vertex_count; i++)
+        {
+                scene.w.surfaces[1].vertices[i].pos.x -= 5.0f;
+                scene.w.surfaces[1].vertices[i].pos.y = -2.0f;
+        }
+        init_vert_plane(&scene.w.surfaces[2], -10.0f);
 
         scene.entities = malloc(1 * sizeof(struct entity));
         scene.entity_count = 1;
@@ -89,11 +103,13 @@ int main(int argc, char* argv[])
         scene.entities[0].surfaces = malloc(1 * sizeof(struct mesh));
         scene.entities[0].surface_count = 1;
         scene.entities[0].o.p.p.y = 3.0f;
-        scene.entities[0].o.m = 1.0f;
+        scene.entities[0].o.m = 10.0f;
         scene.entities[0].o.area = 0.3f;
         scene.entities[0].o.drag_c = 0.47f;
         scene.entities[0].o.restitution = 0.9f;
-        scene.entities[0].o.p.rad = 1.0f;
+        scene.entities[0].o.static_mu = 0.15f;
+        scene.entities[0].o.dynamic_mu = 0.1f;
+        scene.entities[0].o.p.rad = 0.0f; // 0.0f non zero radius breaks
         scene.entities[0].a.speed = 0.8f; // 0.2 rad/sec
         scene.entities[0].animate = &animate_rot_y;
         init_cube(&scene.entities[0].surfaces[0]);
@@ -110,6 +126,7 @@ int main(int argc, char* argv[])
                 return 1;
         }
 
+        int step = 0;
         while (!input.quit)
         {
                 long ns;
@@ -138,7 +155,7 @@ int main(int argc, char* argv[])
                 // update objects
                 for (int i = 0; i < scene.entity_count; i++)
                 {
-                        update_object(1, &scene.w, &scene.entities[i].o);
+                        update_object(step, &scene.w, &scene.entities[i].o);
                 }
 
                 renderer->render(renderer, &scene, dt);
@@ -151,6 +168,14 @@ int main(int argc, char* argv[])
                 {
                         ns = (long)(remaining * 1000000000.0f);
                         timing_sleep(ns * slowmo);
+                }
+
+                step++;
+
+                if ((step % 100) == 0 && 0)
+                {
+                        printf("--- Print particle ------\n");
+                        print_particle(&scene.entities->o.p);
                 }
         }
 
@@ -171,6 +196,8 @@ void init_cube(struct mesh* m)
         m->index_count = 36;
         m->indices = malloc(m->index_count * sizeof(int));
         m->restitution = 1.0f;
+        m->static_mu = 0.7f;
+        m->dynamic_mu = 0.45f;
 
         /* Front face  (z = +1)  normal ( 0,  0,  1) */
         m->vertices[ 0] = (struct vertex){ .pos = { .a = {-1, -1,  1} }, .normal = { .a = { 0,  0,  1} } };
@@ -254,6 +281,8 @@ void init_plane(struct mesh* m, float w, float h, int tilt)
         m->index_count = 6;
         m->indices = malloc(m->index_count * sizeof(int));
         m->restitution = 0.7f;
+        m->static_mu = 0.15f;
+        m->dynamic_mu = 0.1f;
 
         w = w / 2.0f;
         h = h / 2.0f;
@@ -262,6 +291,45 @@ void init_plane(struct mesh* m, float w, float h, int tilt)
         m->vertices[1] = (struct vertex){ .pos = { .a = {-w,  y,  h} }, .normal = { .a = { 0,  1,  0} } };
         m->vertices[2] = (struct vertex){ .pos = { .a = { w,  0,  h} }, .normal = { .a = { 0,  1,  0} } };
         m->vertices[3] = (struct vertex){ .pos = { .a = { w,  0, -h} }, .normal = { .a = { 0,  1,  0} } };
+
+        m->indices[0] = 0; m->indices[1] = 1; m->indices[2] = 3;
+        m->indices[3] = 1; m->indices[4] = 2; m->indices[5] = 3;
+
+        /* Colorize each vertex with a unique hue */
+        for (int i = 0; i < m->vertex_count; i++) {
+                float hue = (float)i / (float)m->vertex_count * 360.0f;
+                float s = 0.8f, v = 0.9f;
+                float c = v * s;
+                float x = c * (1.0f - fabsf(fmodf(hue / 60.0f, 2.0f) - 1.0f));
+                float mm = v - c;
+                float r, g, b;
+                if      (hue < 60)  { r = c; g = x; b = 0; }
+                else if (hue < 120) { r = x; g = c; b = 0; }
+                else if (hue < 180) { r = 0; g = c; b = x; }
+                else if (hue < 240) { r = 0; g = x; b = c; }
+                else if (hue < 300) { r = x; g = 0; b = c; }
+                else                { r = c; g = 0; b = x; }
+                m->vertices[i].color = (struct vec4){ .a = { r + mm, g + mm, b + mm, 1.0f } };
+        }
+}
+
+void init_vert_plane(struct mesh* m, float x)
+{
+        m->vertex_count = 4;
+        m->vertices = malloc(m->vertex_count * sizeof(struct vertex));
+        m->index_count = 6;
+        m->indices = malloc(m->index_count * sizeof(int));
+        m->restitution = 0.7f;
+        m->static_mu = 0.15f;
+        m->dynamic_mu = 0.1f;
+
+        float w = 5.0f;
+        float h = 5.0f;
+
+        m->vertices[0] = (struct vertex){ .pos = { .a = {x,  h, -w} }, .normal = { .a = { 1, 0, 0} } };
+        m->vertices[1] = (struct vertex){ .pos = { .a = {x,  h,  w} }, .normal = { .a = { 1, 0, 0} } };
+        m->vertices[2] = (struct vertex){ .pos = { .a = {x,  -h,  w} }, .normal = { .a = { 1, 0, 0} } };
+        m->vertices[3] = (struct vertex){ .pos = { .a = {x,  -h, -w} }, .normal = { .a = { 1, 0, 0} } };
 
         m->indices[0] = 0; m->indices[1] = 1; m->indices[2] = 3;
         m->indices[3] = 1; m->indices[4] = 2; m->indices[5] = 3;

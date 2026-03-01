@@ -56,15 +56,13 @@ struct water
         // the buffer with the last state
         // Todo, replace witha simpel MxN float array?
         struct vertex* z;
-        int nx;
-        int ny;
 };
 
 /**
  * v and d must have the same spacing, and each vertex must have the
  * same x and z position.
  */
-void init_water(struct water* w, struct mesh* v, struct mesh* d);
+int init_water(struct water* w, struct mesh* v, struct mesh* d);
 
 void update_water(struct water* w, struct mesh* v, float dt);
 
