@@ -1,6 +1,6 @@
 include ../common.mk
 
-all: free_fall geom
+all: free_fall geom test_math
 
 CFLAGS += -I../src
 
@@ -16,5 +16,13 @@ free_fall: free_fall.c $(DEPS)
 geom: geom.c $(DEPS)
 	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $^ $(LIBS)
 
+test_math: test_math.c $(DEPS)
+	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $^ $(LIBS)
+
+test: free_fall geom test_math
+	./free_fall
+	./geom
+	./test_math
+
 clean:
-	rm -rf free_fall geom objs/*
+	rm -rf free_fall geom test_math objs/*

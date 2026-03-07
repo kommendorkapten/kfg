@@ -262,18 +262,13 @@ void update_object(int step, struct world* w, struct object* o)
                 float dt = (1.0f - t_coll) * w->dt;
 
                 o->p.p.x = o->p.p.x + o->p.v.x * dt;
-                printf("%d py %f\n", step, o->p.p.y);
                 o->p.p.y = o->p.p.y + o->p.v.y * dt;
-                printf("%d step, then py %f\n", step, o->p.p.y);
                 o->p.p.z = o->p.p.z + o->p.v.z * dt;
         }
         else
         {
                 // Update position and velocity if there was no collision
-                printf("%d no coll py %f\n", step, o->p.p.y);
                 o->p.p = new_pos;
-                printf("%d to coll py %f\n", step, o->p.p.y);
-
                 o->p.v = new_vel;
         }
 

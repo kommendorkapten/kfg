@@ -13,6 +13,7 @@ int main(void)
         struct vec3 e1, e2;
         struct vec3 n;
         struct particle p = {0};
+        float vn;
         float t;
         float u;
         float v;
@@ -22,6 +23,7 @@ int main(void)
         e2 = vec3_sub(&v2, &v0);
 
         n = vec3_cross(&e1, &e2);
+        n = vec3_norm(&n);
 
         // Test that a particle collides
         p.v = (struct vec3){ .a = { 0.0f, -1.0f, 0.0f } };
@@ -129,7 +131,8 @@ int main(void)
         p.v.y = -1.0f;
         p.v.z = 1.0f;
 
-        collide_particle(&p, &n, 1.0f);
+        vn = vec3_dot(&n, &p.v);
+        collide_particle(&p, &n, vn, 1.0f);
         // with restitution constant of 1.0f, the v.y component should be
         // negated, x and z should be unaffected
         if (fabsf(p.v.y - 1.0f) > 0.001)
@@ -146,14 +149,15 @@ int main(void)
         // Particle is now moving away from surface,
         // colide again, should print error message
         printf("Expected error message\n");
-        collide_particle(&p, &n, 1.0f);
+        collide_particle(&p, &n, vn, 1.0f);
 
         p.p.y = 0.1f;
         p.v.x = 1.0;
         p.v.y = -1.0f;
         p.v.z = 1.0f;
 
-        collide_particle(&p, &n, 0.5f);
+        vn = vec3_dot(&n, &p.v);
+        collide_particle(&p, &n, vn, 0.5f);
         // with restitution constant of 0.5f, the v.y component should be
         // negated and halfed, x and z should be unaffected
         if (fabsf(p.v.y - 0.5f) > 0.001)
