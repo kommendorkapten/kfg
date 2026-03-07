@@ -43,11 +43,11 @@ int main(int argc, char* argv[])
                 }
         }
 
-        printf("%d\n", tilt);
-
         input.width = KM_DEFAULT_WIDTH;
         input.height = KM_DEFAULT_HEIGHT;
-        default_world(&scene.w, 60);
+        // current collision detection breaks down under 60hz with this
+        // scene.
+        default_world(&scene.w, 120);
 
         if (SDL_Init(SDL_INIT_VIDEO) < 0)
         {
@@ -103,7 +103,7 @@ int main(int argc, char* argv[])
         scene.entities[0].surfaces = malloc(1 * sizeof(struct mesh));
         scene.entities[0].surface_count = 1;
         scene.entities[0].o.p.p.y = 3.0f;
-        scene.entities[0].o.m = 10.0f;
+        scene.entities[0].o.m = 1.0f;
         scene.entities[0].o.area = 0.3f;
         scene.entities[0].o.drag_c = 0.47f;
         scene.entities[0].o.restitution = 0.9f;

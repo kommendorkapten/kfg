@@ -151,7 +151,6 @@ void update_object(int step, struct world* w, struct object* o)
                                         continue;
                                 }
 
-                                printf("%d collide with surface %d\n", step, s);
                                 t_coll = t * remainder;
                                 coll = 1;
 
@@ -185,13 +184,10 @@ void update_object(int step, struct world* w, struct object* o)
                                                  rc);
 
                                 // add the rest of the velocity step
-#if 1
-                                printf("%d vy is now: %f\n", step, o->p.v.y);
                                 o->p.v.x += o->p.a.x * w->dt * 0.5f * (remainder - t_coll);
                                 o->p.v.y += o->p.a.y * w->dt * 0.5f * (remainder - t_coll);
                                 o->p.v.z += o->p.a.z * w->dt * 0.5f * (remainder - t_coll);
-                                printf("%d and vy is now: %f\n", step, o->p.v.y);
-#endif
+
                                 // recompute v_normal as it's now different
                                 // after the bounce
                                 v_normal = vec3_dot(&o->p.v, &n);
