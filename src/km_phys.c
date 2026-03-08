@@ -51,7 +51,7 @@ void update_object(int step, struct world* w, struct object* o)
         struct particle p;
         struct vec3 new_pos;
         struct vec3 new_vel;
-        struct vec3 f;
+        struct vec3 f = {0};
         float t_coll = 0;
         float remainder = 1.0f;
         int coll = 0;
@@ -79,9 +79,6 @@ void update_object(int step, struct world* w, struct object* o)
         // velocity, i.e new_pos - old_pos.
         p.p = o->p.p;
         p.v = vec3_sub(&new_pos, &p.p);
-
-        // set external force to zero
-        o->p.f = (struct vec3){ .a = { 0.0f, 0.0f, 0.0f } };
 
         // collision detection
         for (int s = 0; s < w->surface_count; s++)
@@ -234,7 +231,7 @@ void update_object(int step, struct world* w, struct object* o)
                                 float mu = sqrtf(o->dynamic_mu *
                                                  m->dynamic_mu);
                                 tmp = vec3_scalarm(&tmp, -fN * mu);
-                                o->p.f = vec3_add(&o->p.f, &tmp);
+                                f = vec3_add(&f, &tmp);
 
                                 float vabs = vec3_dot(&o->p.v, &o->p.v);
                                 // is the object at rest?
@@ -274,12 +271,11 @@ void update_object(int step, struct world* w, struct object* o)
 
         // compute all forces
         // gravity
-        f.x = o->m * w->g.x;
-        f.y = o->m * w->g.y;
-        f.z = o->m * w->g.z;
-
-        // add computed forces from collision
-        f = vec3_add(&f, &o->p.f);
+        // We accumulate on top of f, because f might contain friction
+        // from a collision we just evaluated this step
+        f.x += o->m * w->g.x;
+        f.y += o->m * w->g.y;
+        f.z += o->m * w->g.z;
 
         drag_force(&f, w, o);
 

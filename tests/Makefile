@@ -1,14 +1,14 @@
 include ../common.mk
 
-all: free_fall geom test_math
+all: free_fall geom test_math test_friction
 
 CFLAGS += -I../src
 
 DEPS = ../src/objs/km_geom.o \
-	../src/objs/km_math.o \
-	../src/objs/km_phys.o \
-	../src/objs/timing.o \
-	../lib/objs/cJSON.o
+        ../src/objs/km_math.o \
+        ../src/objs/km_phys.o \
+        ../src/objs/timing.o \
+        ../lib/objs/cJSON.o
 
 free_fall: free_fall.c $(DEPS)
 	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $^ $(LIBS)
@@ -19,10 +19,14 @@ geom: geom.c $(DEPS)
 test_math: test_math.c $(DEPS)
 	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $^ $(LIBS)
 
-test: free_fall geom test_math
+test_friction: test_friction.c $(DEPS)
+	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $^ $(LIBS)
+
+test: free_fall geom test_math test_friction
 	./free_fall
 	./geom
 	./test_math
+#	./test_friction
 
 clean:
-	rm -rf free_fall geom test_math objs/*
+	rm -rf free_fall geom test_math test_friction objs/*
