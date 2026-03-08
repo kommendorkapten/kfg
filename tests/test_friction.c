@@ -47,6 +47,7 @@ int test_sliding_friction(void)
         o.static_mu = 0.5f;
         o.dynamic_mu = 0.5f;
         o.steady_state = 0;
+        o.contact_mesh = NULL;
         
         // Expected distance: d = v^2 / (2 * mu * g)
         // Note: mu = sqrt(obj_mu * mesh_mu) = 0.5

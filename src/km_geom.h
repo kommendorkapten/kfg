@@ -47,6 +47,9 @@ struct object
         float static_mu;
         // dynamic friction coefficient
         float dynamic_mu;
+        // Persistent contact cache
+        struct mesh* contact_mesh;
+        struct vec3 contact_normal;
 };
 
 struct vertex
