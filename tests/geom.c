@@ -19,11 +19,11 @@ int main(void)
         float v;
         int coll;
 
-        e1 = vec3_sub(&v1, &v0);
-        e2 = vec3_sub(&v2, &v0);
+        e1 = vec3_sub(v1, v0);
+        e2 = vec3_sub(v2, v0);
 
-        n = vec3_cross(&e1, &e2);
-        n = vec3_norm(&n);
+        n = vec3_cross(e1, e2);
+        n = vec3_norm(n);
 
         // Test that a particle collides
         p.v = (struct vec3){ .a = { 0.0f, -1.0f, 0.0f } };
@@ -131,7 +131,7 @@ int main(void)
         p.v.y = -1.0f;
         p.v.z = 1.0f;
 
-        vn = vec3_dot(&n, &p.v);
+        vn = vec3_dot(n, p.v);
         collide_particle(&p, &n, vn, 1.0f);
         // with restitution constant of 1.0f, the v.y component should be
         // negated, x and z should be unaffected
@@ -156,7 +156,7 @@ int main(void)
         p.v.y = -1.0f;
         p.v.z = 1.0f;
 
-        vn = vec3_dot(&n, &p.v);
+        vn = vec3_dot(n, p.v);
         collide_particle(&p, &n, vn, 0.5f);
         // with restitution constant of 0.5f, the v.y component should be
         // negated and halfed, x and z should be unaffected

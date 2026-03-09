@@ -29,9 +29,9 @@ int km_process_input(struct km_input *input, struct scene* scene)
 
                 case SDL_KEYDOWN:
 
-                        d = vec3_sub(&scene->cam.pos,
-                                     &scene->cam.center);
-                        r = sqrtf(vec3_dot(&d, &d));
+                        d = vec3_sub(scene->cam.pos,
+                                     scene->cam.center);
+                        r = sqrtf(vec3_dot(d, d));
 
                         switch (event.key.keysym.sym)
                         {

@@ -65,13 +65,13 @@ void update_object(int step, struct world* w, struct object* o)
 
         if (o->contact_mesh)
         {
-                float v_normal = vec3_dot(&o->p.v, &o->contact_normal);
+                float v_normal = vec3_dot(o->p.v, o->contact_normal);
                 if (v_normal < 0.0f)
                 {
                         // make sure object does not move into the surface
-                        struct vec3 v_corr = vec3_scalarm(&o->contact_normal,
+                        struct vec3 v_corr = vec3_scalarm(o->contact_normal,
                                                           v_normal);
-                        o->p.v = vec3_sub(&o->p.v, &v_corr);
+                        o->p.v = vec3_sub(o->p.v, v_corr);
                 }
         }
 
@@ -90,7 +90,7 @@ void update_object(int step, struct world* w, struct object* o)
         // original position and velocity set to the step's
         // velocity, i.e new_pos - old_pos.
         p.p = o->p.p;
-        p.v = vec3_sub(&new_pos, &p.p);
+        p.v = vec3_sub(new_pos, p.p);
 
         // collision detection
         for (int s = 0; s < w->surface_count; s++)
@@ -100,25 +100,24 @@ void update_object(int step, struct world* w, struct object* o)
 
                 if (m == o->contact_mesh)
                 {
-                        float v_normal = vec3_dot(&o->p.v, &o->contact_normal);
+                        float v_normal = vec3_dot(o->p.v, o->contact_normal);
                         struct vec3 tmp = (struct vec3){ .a = {0.0f, 1.0f, 0.0f } };
                         float fN = o->m * KM_PHYS_G *
-                                fabsf(vec3_dot(&o->contact_normal, &tmp));
+                                fabsf(vec3_dot(o->contact_normal, tmp));
                         // compute the tangent velocity
-                        tmp = vec3_scalarm(&o->contact_normal, v_normal);
-                        tmp = vec3_sub(&o->p.v, &tmp);
+                        tmp = vec3_scalarm(o->contact_normal, v_normal);
+                        tmp = vec3_sub(o->p.v, tmp);
                         // only normalize if the tangent velocity
                         // is not zero
-                        tmp = o->p.v;
                         if (!vec3_iszero(tmp))
                         {
-                                tmp = vec3_norm(&tmp);
+                                tmp = vec3_norm(tmp);
                         }
 
                         float mu = sqrtf(o->dynamic_mu *
                                          m->dynamic_mu);
-                        tmp = vec3_scalarm(&tmp, -fN * mu);
-                        f = vec3_add(&f, &tmp);
+                        tmp = vec3_scalarm(tmp, -fN * mu);
+                        f = vec3_add(f, tmp);
                         continue;
                 }
 
@@ -161,14 +160,14 @@ void update_object(int step, struct world* w, struct object* o)
                         if (coll_test)
                         {
                                 float inv_disp_len = km_rsqrt(
-                                        vec3_dot(&p.v, &p.v));
+                                        vec3_dot(p.v, p.v));
                                 float t_max = remainder;
-                                struct vec3 e1 = vec3_sub(&v1->pos, &v0->pos);
-                                struct vec3 e2 = vec3_sub(&v2->pos, &v0->pos);
-                                struct vec3 n = vec3_cross(&e1, &e2);
+                                struct vec3 e1 = vec3_sub(v1->pos, v0->pos);
+                                struct vec3 e2 = vec3_sub(v2->pos, v0->pos);
+                                struct vec3 n = vec3_cross(e1, e2);
                                 float v_normal;
 
-                                n = vec3_norm(&n);
+                                n = vec3_norm(n);
 
                                 if (inv_disp_len < 1e5f &&
                                     o->p.rad > 0.0f) {
@@ -204,7 +203,7 @@ void update_object(int step, struct world* w, struct object* o)
                                 o->p.v.y += o->p.a.y * w->dt * 0.5f * t_coll;
                                 o->p.v.z += o->p.a.z * w->dt * 0.5f * t_coll;
 
-                                v_normal = vec3_dot(&o->p.v, &n);
+                                v_normal = vec3_dot(o->p.v, n);
 
                                 // Collide the particle. This will mirror
                                 // the velocity in the collision normal's
@@ -223,17 +222,17 @@ void update_object(int step, struct world* w, struct object* o)
 
                                 // recompute v_normal as it's now different
                                 // after the bounce
-                                v_normal = vec3_dot(&o->p.v, &n);
+                                v_normal = vec3_dot(o->p.v, n);
 
                                 // Move object to the collision surface
                                 // todo: this shadows float v
-                                struct vec3 v = vec3_scalarm(&p.v, t);
-                                o->p.p = vec3_add(&o->p.p, &v);
+                                struct vec3 v = vec3_scalarm(p.v, t);
+                                o->p.p = vec3_add(o->p.p, v);
 
                                 // Move the object away from the surface
                                 // a tiny bit (1mm)
-                                struct vec3 ns = vec3_scalarm(&n, 0.001f);
-                                o->p.p = vec3_add(&o->p.p, &ns);
+                                struct vec3 ns = vec3_scalarm(n, 0.001f);
+                                o->p.p = vec3_add(o->p.p, ns);
 
                                 // check if the bounce height is negligible
                                 // the apex is when when 0.5 m v^2 = mgh
@@ -244,8 +243,8 @@ void update_object(int step, struct world* w, struct object* o)
                                 {
                                         // less than 2mm, set the velocity in the normal's
                                         // direction to zero
-                                        tmp = vec3_scalarm(&n, v_normal);
-                                        o->p.v = vec3_sub(&o->p.v, &tmp);
+                                        tmp = vec3_scalarm(n, v_normal);
+                                        o->p.v = vec3_sub(o->p.v, tmp);
                                         v_normal = 0.0f;
 
                                         // clamp object to mesh
@@ -257,23 +256,23 @@ void update_object(int step, struct world* w, struct object* o)
                                 // apply dynamic friction
                                 tmp = (struct vec3){ .a = {0.0f, 1.0f, 0.0f } };
                                 float fN = o->m * KM_PHYS_G *
-                                        fabsf(vec3_dot(&n, &tmp));
+                                        fabsf(vec3_dot(n, tmp));
                                 // compute the tangent velocity
-                                tmp = vec3_scalarm(&n, v_normal);
-                                tmp = vec3_sub(&o->p.v, &tmp);
+                                tmp = vec3_scalarm(n, v_normal);
+                                tmp = vec3_sub(o->p.v, tmp);
                                 // only normalize if the tangent velocity
                                 // is not zero
                                 if (!vec3_iszero(tmp))
                                 {
-                                        tmp = vec3_norm(&tmp);
+                                        tmp = vec3_norm(tmp);
                                 }
 
                                 float mu = sqrtf(o->dynamic_mu *
                                                  m->dynamic_mu);
-                                tmp = vec3_scalarm(&tmp, -fN * mu);
-                                f = vec3_add(&f, &tmp);
+                                tmp = vec3_scalarm(tmp, -fN * mu);
+                                f = vec3_add(f, tmp);
 
-                                float vabs = vec3_dot(&o->p.v, &o->p.v);
+                                float vabs = vec3_dot(o->p.v, o->p.v);
                                 // is the object at rest?
                                 if (vabs < w->ss_c_thr)
                                 {
@@ -322,11 +321,11 @@ void update_object(int step, struct world* w, struct object* o)
         // apply normal force
         if (o->contact_mesh)
         {
-                float f_normal = vec3_dot(&f, &o->contact_normal);
+                float f_normal = vec3_dot(f, o->contact_normal);
                 // The surface pushes back against forces pushing into it
                 if (f_normal < 0.0f) {
-                        struct vec3 f_corr = vec3_scalarm(&o->contact_normal, f_normal);
-                        f = vec3_sub(&f, &f_corr);
+                        struct vec3 f_corr = vec3_scalarm(o->contact_normal, f_normal);
+                        f = vec3_sub(f, f_corr);
                 }
         }
 
@@ -345,7 +344,7 @@ void drag_force(struct vec3* f, const struct world* w, const struct object* o)
 {
         float half_rho = w->air_density * 0.5f;
         float cd = o->area * o->drag_c;
-        float vs = sqrtf(vec3_dot(&o->p.v, &o->p.v));
+        float vs = sqrtf(vec3_dot(o->p.v, o->p.v));
 
         f->x -= half_rho * vs * o->p.v.x * cd;
         f->y -= half_rho * vs * o->p.v.y * cd;

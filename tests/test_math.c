@@ -93,8 +93,8 @@ int test_vec3_add(void)
 
         for (int i = 0; i < n; i++)
         {
-                struct vec3 r = vec3_add(&cases[i].a,
-                                         &cases[i].b);
+                struct vec3 r = vec3_add(cases[i].a,
+                                         cases[i].b);
                 if (!vec3_approx(r, cases[i].exp, THR))
                 {
                         printf("add %s: "
@@ -163,8 +163,8 @@ int test_vec3_sub(void)
 
         for (int i = 0; i < n; i++)
         {
-                struct vec3 r = vec3_sub(&cases[i].a,
-                                         &cases[i].b);
+                struct vec3 r = vec3_sub(cases[i].a,
+                                         cases[i].b);
                 if (!vec3_approx(r, cases[i].exp, THR))
                 {
                         printf("sub %s: "
@@ -241,7 +241,7 @@ int test_vec3_scalarm(void)
 
         for (int i = 0; i < n; i++)
         {
-                struct vec3 r = vec3_scalarm(&cases[i].v,
+                struct vec3 r = vec3_scalarm(cases[i].v,
                                              cases[i].s);
                 if (!vec3_approx(r, cases[i].exp, THR))
                 {
@@ -285,10 +285,10 @@ int test_vec3_norm(void)
 
         for (int i = 0; i < n; i++)
         {
-                struct vec3 r = vec3_norm(&cases[i].v);
+                struct vec3 r = vec3_norm(cases[i].v);
 
                 // length must be 1
-                float len = sqrtf(vec3_dot(&r, &r));
+                float len = sqrtf(vec3_dot(r, r));
                 if (fabsf(len - 1.0f) > THR)
                 {
                         printf("norm %s: "
@@ -298,7 +298,7 @@ int test_vec3_norm(void)
                 }
 
                 // must point in same direction (dot > 0)
-                float d = vec3_dot(&r, &cases[i].v);
+                float d = vec3_dot(r, cases[i].v);
                 if (d < 0.0f)
                 {
                         printf("norm %s: "
@@ -389,8 +389,8 @@ int test_vec3_dot(void)
 
         for (int i = 0; i < n; i++)
         {
-                float r = vec3_dot(&cases[i].a,
-                                   &cases[i].b);
+                float r = vec3_dot(cases[i].a,
+                                   cases[i].b);
                 if (fabsf(r - cases[i].exp) > THR)
                 {
                         printf("dot %s: "
@@ -485,8 +485,8 @@ int test_vec3_cross(void)
 
         for (int i = 0; i < n; i++)
         {
-                struct vec3 r = vec3_cross(&cases[i].a,
-                                           &cases[i].b);
+                struct vec3 r = vec3_cross(cases[i].a,
+                                           cases[i].b);
                 if (!vec3_approx(r, cases[i].exp, THR))
                 {
                         printf("cross %s: "
@@ -501,8 +501,8 @@ int test_vec3_cross(void)
                 }
 
                 // result must be orthogonal to both inputs
-                float da = vec3_dot(&r, &cases[i].a);
-                float db = vec3_dot(&r, &cases[i].b);
+                float da = vec3_dot(r, cases[i].a);
+                float db = vec3_dot(r, cases[i].b);
                 if (fabsf(da) > THR || fabsf(db) > THR)
                 {
                         printf("cross %s: "

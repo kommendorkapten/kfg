@@ -94,8 +94,8 @@ int main(int argc, char *argv[])
         scene.cam.pos = (struct vec3){ .a = { 0.0f, 8.4f, 30.0f } };
         scene.cam.center = (struct vec3){ .a = { 0.0f, 0.0f, 0.0f } };
         scene.cam.up = (struct vec3){ .a = { 0.0f, 1.0f, 0.0f } };
-        struct vec3 cd = vec3_sub(&scene.cam.pos, &scene.cam.center);
-        float r = sqrtf(vec3_dot(&cd, &cd));
+        struct vec3 cd = vec3_sub(scene.cam.pos, scene.cam.center);
+        float r = sqrtf(vec3_dot(cd, cd));
         input.phi = acosf(cd.y / r);
         input.theta = atan2f(cd.z, cd.x);
 

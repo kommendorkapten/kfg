@@ -65,7 +65,7 @@ int test_sliding_friction(void)
                 if (step % 50 == 0) {
                         printf("step: %d, x: %f, y: %f, vx: %f, vy: %f, vabs: %f\n", 
                                 step, o.p.p.x, o.p.p.y, o.p.v.x, o.p.v.y,
-                                vec3_dot(&o.p.v, &o.p.v));
+                                vec3_dot(o.p.v, o.p.v));
                 }
                 if (o.steady_state)
                 {

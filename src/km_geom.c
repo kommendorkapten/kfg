@@ -60,11 +60,11 @@ int ray_tri_intersect(const struct particle* r,
         float f;
         float inv_f;
 
-        e1 = vec3_sub(v1, v0);
-        e2 = vec3_sub(v2, v0);
-        p = vec3_cross(&r->v, &e2);
+        e1 = vec3_sub(*v1, *v0);
+        e2 = vec3_sub(*v2, *v0);
+        p = vec3_cross(r->v, e2);
 
-        f = vec3_dot(&e1, &p);
+        f = vec3_dot(e1, p);
         if (fabs(f) < epsilon)
         {
                 // Ray is parallel to the triangle's plane
@@ -72,21 +72,21 @@ int ray_tri_intersect(const struct particle* r,
         }
 
         inv_f = 1.0f / f;
-        s = vec3_sub(&r->p, v0);
-        *u = inv_f * vec3_dot(&s, &p);
+        s = vec3_sub(r->p, *v0);
+        *u = inv_f * vec3_dot(s, p);
         if (*u < 0.0f || *u > 1.0f)
         {
                 return 0;
         }
 
-        q = vec3_cross(&s, &e1);
-        *v = inv_f * vec3_dot(&r->v, &q);
+        q = vec3_cross(s, e1);
+        *v = inv_f * vec3_dot(r->v, q);
         if (*v < 0.0f || *u + *v > 1.0f)
         {
                 return 0;
         }
 
-        *t = inv_f * vec3_dot(&e2, &q);
+        *t = inv_f * vec3_dot(e2, q);
         if (*t < epsilon)
         {
                 // particle is already behind triangle
@@ -119,8 +119,8 @@ void collide_particle(struct particle* p,
         // reduce speed in the scaled normal's direction
         float factor = (1.0f + rc) * vn;
 
-        struct vec3 ns = vec3_scalarm(n, factor);
-        p->v = vec3_sub(&p->v, &ns);
+        struct vec3 ns = vec3_scalarm(*n, factor);
+        p->v = vec3_sub(p->v, ns);
 }
 
 void mesh_free(struct mesh* m)
@@ -703,19 +703,19 @@ void mesh_normalize(struct mesh* m)
 
                 mesh_get_tri(&v0, &v1, &v2, m, i);
 
-                e1 = vec3_sub(&v1->pos, &v0->pos);
-                e2 = vec3_sub(&v2->pos, &v0->pos);
+                e1 = vec3_sub(v1->pos, v0->pos);
+                e2 = vec3_sub(v2->pos, v0->pos);
 
-                n = vec3_cross(&e1, &e2);
+                n = vec3_cross(e1, e2);
 
-                v0->normal = vec3_add(&v0->normal, &n);
-                v1->normal = vec3_add(&v1->normal, &n);
-                v2->normal = vec3_add(&v2->normal, &n);
+                v0->normal = vec3_add(v0->normal, n);
+                v1->normal = vec3_add(v1->normal, n);
+                v2->normal = vec3_add(v2->normal, n);
         }
 
         for (uint16_t i = 0; i < m->vertex_count; i++)
         {
-                m->vertices[i].normal = vec3_norm(&m->vertices[i].normal);
+                m->vertices[i].normal = vec3_norm(m->vertices[i].normal);
         }
 }
 
@@ -723,7 +723,7 @@ void mesh_translate(struct mesh* m, struct vec3* v)
 {
         for (uint16_t i = 0; i < m->vertex_count; i++)
         {
-                m->vertices[i].pos = vec3_add(&m->vertices[i].pos, v);
+                m->vertices[i].pos = vec3_add(m->vertices[i].pos, *v);
         }
 }
 

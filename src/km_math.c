@@ -18,42 +18,42 @@
 _Static_assert(sizeof(struct vec3) == 12, "vec3 must be 12 bytes");
 _Static_assert(sizeof(struct vec4) == 16, "vec3 must be 16 bytes");
 
-struct vec3 vec3_add(const struct vec3* v0,
-                     const struct vec3* v1)
+struct vec3 vec3_add(struct vec3 v0,
+                     struct vec3 v1)
 {
         struct vec3 r;
 
-        r.x = v0->x + v1->x;
-        r.y = v0->y + v1->y;
-        r.z = v0->z + v1->z;
+        r.x = v0.x + v1.x;
+        r.y = v0.y + v1.y;
+        r.z = v0.z + v1.z;
 
         return r;
 }
 
-struct vec3 vec3_sub(const struct vec3* v0,
-                     const struct vec3* v1)
+struct vec3 vec3_sub(struct vec3 v0,
+                     struct vec3 v1)
 {
         struct vec3 r;
 
-        r.x = v0->x - v1->x;
-        r.y = v0->y - v1->y;
-        r.z = v0->z - v1->z;
+        r.x = v0.x - v1.x;
+        r.y = v0.y - v1.y;
+        r.z = v0.z - v1.z;
 
         return r;
 }
 
-struct vec3 vec3_scalarm(const struct vec3* restrict v, float s)
+struct vec3 vec3_scalarm(struct vec3 v, float s)
 {
         struct vec3 r;
 
-        r.x = v->x * s;
-        r.y = v->y * s;
-        r.z = v->z * s;
+        r.x = v.x * s;
+        r.y = v.y * s;
+        r.z = v.z * s;
 
         return r;
 }
 
-struct vec3 vec3_norm(const struct vec3* v)
+struct vec3 vec3_norm(struct vec3 v)
 {
         // try with rsqrt intrinsic + one NR, should give same precision
         // float x = vec3_dot(v, v)
@@ -64,20 +64,20 @@ struct vec3 vec3_norm(const struct vec3* v)
 }
 
 
-float vec3_dot(const struct vec3* v0,
-               const struct vec3* v1)
+float vec3_dot(struct vec3 v0,
+               struct vec3 v1)
 {
-        return v0->x * v1->x + v0->y * v1->y + v0->z * v1->z;
+        return v0.x * v1.x + v0.y * v1.y + v0.z * v1.z;
 }
 
-struct vec3 vec3_cross(const struct vec3* restrict v0,
-                       const struct vec3* restrict v1)
+struct vec3 vec3_cross(struct vec3 v0,
+                       struct vec3 v1)
 {
         struct vec3  r;
 
-        r.x = v0->y * v1->z - v0->z * v1->y;
-        r.y = v0->z * v1->x - v0->x * v1->z;
-        r.z = v0->x * v1->y - v0->y * v1->x;
+        r.x = v0.y * v1.z - v0.z * v1.y;
+        r.y = v0.z * v1.x - v0.x * v1.z;
+        r.z = v0.x * v1.y - v0.y * v1.x;
 
         return r;
 }
@@ -104,7 +104,7 @@ void vec3_print(struct vec3 v)
 
 int vec3_iszero(struct vec3 v)
 {
-        if (vec3_dot(&v, &v) < 1e-8f)
+        if (vec3_dot(v, v) < 1e-8f)
         {
                 return 1;
         }

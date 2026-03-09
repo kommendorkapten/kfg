@@ -42,18 +42,17 @@ struct vec4
         };
 };
 
-struct vec3 vec3_add(const struct vec3*, const struct vec3*);
-struct vec3 vec3_sub(const struct vec3*, const struct vec3*);
-struct vec3 vec3_scalarm(const struct vec3*, float);
+struct vec3 vec3_add(struct vec3, struct vec3);
+struct vec3 vec3_sub(struct vec3, struct vec3);
+struct vec3 vec3_scalarm(struct vec3, float);
 /**
  * Normalize a vector
  * @param v the vector be to normalize
  * @return the noralized vector
  */
-struct vec3 vec3_norm(const struct vec3*);
-float vec3_dot(const struct vec3*, const struct vec3*);
-struct vec3 vec3_cross(const struct vec3* restrict,
-                       const struct vec3* restrict);
+struct vec3 vec3_norm(struct vec3);
+float vec3_dot(struct vec3, struct vec3);
+struct vec3 vec3_cross(struct vec3, struct vec3);
 float km_rsqrt(float x);
 void vec3_print(struct vec3 v);
 int vec3_iszero(struct vec3 v);
