@@ -127,6 +127,7 @@ int main(int argc, char* argv[])
         }
 
         int step = 0;
+        last = SDL_GetPerformanceCounter();
         while (!input.quit)
         {
                 long ns;
@@ -194,7 +195,7 @@ void init_cube(struct mesh* m)
         m->vertex_count = 24;
         m->vertices = malloc(m->vertex_count * sizeof(struct vertex));
         m->index_count = 36;
-        m->indices = malloc(m->index_count * sizeof(int));
+        m->indices = malloc(m->index_count * sizeof(uint16_t));
         m->restitution = 1.0f;
         m->static_mu = 0.7f;
         m->dynamic_mu = 0.45f;
@@ -279,7 +280,7 @@ void init_plane(struct mesh* m, float w, float h, int tilt)
         m->vertex_count = 4;
         m->vertices = malloc(m->vertex_count * sizeof(struct vertex));
         m->index_count = 6;
-        m->indices = malloc(m->index_count * sizeof(int));
+        m->indices = malloc(m->index_count * sizeof(uint16_t));
         m->restitution = 0.7f;
         m->static_mu = 0.15f;
         m->dynamic_mu = 0.1f;
@@ -318,7 +319,7 @@ void init_vert_plane(struct mesh* m, float x)
         m->vertex_count = 4;
         m->vertices = malloc(m->vertex_count * sizeof(struct vertex));
         m->index_count = 6;
-        m->indices = malloc(m->index_count * sizeof(int));
+        m->indices = malloc(m->index_count * sizeof(uint16_t));
         m->restitution = 0.7f;
         m->static_mu = 0.15f;
         m->dynamic_mu = 0.1f;

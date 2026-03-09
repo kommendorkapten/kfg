@@ -649,9 +649,9 @@ void mesh_heightmap(struct mesh* m, int peaks, float max_height, float radius)
 
         for (int i = 0; i < peaks; i++)
         {
-                peak_x[i] = min_x + range_x * ((float)rand() / (float)RAND_MAX);
-                peak_z[i] = min_z + range_z * ((float)rand() / (float)RAND_MAX);
-                peak_h[i] = max_height * ((float)rand() / (float)RAND_MAX);
+                peak_x[i] = min_x + range_x * ((float)arc4random() / (float)UINT32_MAX);
+                peak_z[i] = min_z + range_z * ((float)arc4random() / (float)UINT32_MAX);
+                peak_h[i] = max_height * ((float)arc4random() / (float)UINT32_MAX);
         }
 
         /* For each vertex, sum contributions from all peaks */

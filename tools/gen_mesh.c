@@ -144,6 +144,7 @@ int main(int argc, char* argv[])
                 return 1;
         }
 
+        last = SDL_GetPerformanceCounter();
         while (!input.quit)
         {
                 if (!km_process_input(&input, &scene))

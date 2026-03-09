@@ -8,9 +8,10 @@ FRAMEWORKS = -framework Metal      \
              -framework Foundation \
              -framework CoreGraphics
 
-CFLAGS    += $(SDL_CFLAGS) -I../src
-OBJCFLAGS += $(SDL_CFLAGS) -I../src
-LDFLAGS    = $(SDL_LDFLAGS) $(FRAMEWORKS)
+CFLAGS     += $(SDL_CFLAGS) -I../src
+OBJCFLAGS  += $(SDL_CFLAGS) -I../src
+LDFLAGS     = $(SDL_LDFLAGS) $(FRAMEWORKS)
+LINT_FLAGS += $(SDL_CFLAGS)
 
 TARGET = km_app
 

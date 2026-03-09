@@ -1,12 +1,14 @@
-SUBDIRS = src tests examples
+SUBDIRS = src tests examples tools
 
 all:
 	@for dir in $(SUBDIRS); do \
-		$(MAKE) -C $$dir; \
+		$(MAKE) -C $$dir all; \
 	done
 
-app:
-	$(MAKE) -C app
+lint:
+	@for dir in $(SUBDIRS); do \
+		$(MAKE) -C $$dir lint; \
+	done
 
 clean:
 	@for dir in $(SUBDIRS); do \
@@ -14,4 +16,4 @@ clean:
 	done
 	$(MAKE) -C app clean
 
-.PHONY: all clean app $(SUBDIRS)
+.PHONY: all clean lint $(SUBDIRS)

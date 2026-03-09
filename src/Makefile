@@ -1,8 +1,10 @@
 include ../common.mk
 
-TARGET =
-CFLAGS += -I../src $(shell sdl2-config --cflags)
-OBJCFLAGS += $(shell sdl2-config --cflags)
+SDL_CFLAGS  := $(shell sdl2-config --cflags)
+
+CFLAGS     += -I../src $(SDL_CFLAGS)
+OBJCFLAGS  += $(SDL_CFLAGS)
+LINT_FLAGS += $(SDL_CFLAGS)
 
 # Metal shader sources
 METAL_SRCS   = $(wildcard metal/shaders/*.metal)

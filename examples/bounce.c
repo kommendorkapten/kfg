@@ -65,7 +65,7 @@ int main(int argc, char** argv)
         // create a mesh that (-1,1) (-1,-1) (1, -1) (1,1) in the x-z plane
         struct mesh s1;
         s1.vertices = malloc(4 * sizeof(struct vertex));
-        s1.indices = malloc(6 * sizeof(int));
+        s1.indices = malloc(6 * sizeof(uint16_t));
         s1.vertex_count = 4;
         s1.index_count = 6;
         s1.restitution = 1.0f;

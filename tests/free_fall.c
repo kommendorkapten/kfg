@@ -457,7 +457,7 @@ int test_coll(void)
         m.vertices[1].pos = (struct vec3) { .a = { -1.0f, 0.0f, 1.0f } };
         m.vertices[2].pos = (struct vec3) { .a = { 2.0f, 0.0f, 1.0f } };
         m.index_count = 3;
-        m.indices = malloc(m.index_count * sizeof(int));
+        m.indices = malloc(m.index_count * sizeof(uint16_t));
         m.indices[0] = 0;
         m.indices[1] = 1;
         m.indices[2] = 2;

@@ -1,6 +1,6 @@
-include ../common.mk
-
 all: free_fall geom test_math test_friction
+
+include ../common.mk
 
 CFLAGS += -I../src
 

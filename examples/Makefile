@@ -1,6 +1,6 @@
-include ../common.mk
-
 all: bounce visb
+
+include ../common.mk
 
 DEPS = ../src/objs/km_geom.o \
 	../src/objs/km_math.o \
@@ -23,6 +23,7 @@ FRAMEWORKS = -framework Metal      \
 
 CFLAGS    += $(SDL_CFLAGS) -I../src
 LDFLAGS    = $(SDL_LDFLAGS) $(FRAMEWORKS)
+LINT_FLAGS += $(SDL_CFLAGS)
 
 bounce: bounce.c $(DEPS)
 	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $^ $(LIBS)
