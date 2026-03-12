@@ -22,10 +22,14 @@ test_math: test_math.c $(DEPS)
 test_friction: test_friction.c $(DEPS)
 	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $^ $(LIBS)
 
-test: free_fall geom test_math test_friction
+test_phys: test_phys.c $(DEPS)
+	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $^ $(LIBS)
+
+test: free_fall geom test_math test_friction test_phys
 	./free_fall
 	./geom
 	./test_math
+	./test_phys
 #	./test_friction
 
 clean:

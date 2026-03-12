@@ -100,24 +100,7 @@ void update_object(int step, struct world* w, struct object* o)
 
                 if (m == o->contact_mesh)
                 {
-                        float v_normal = vec3_dot(o->p.v, o->contact_normal);
-                        struct vec3 tmp = (struct vec3){ .a = {0.0f, 1.0f, 0.0f } };
-                        float fN = o->m * KM_PHYS_G *
-                                fabsf(vec3_dot(o->contact_normal, tmp));
-                        // compute the tangent velocity
-                        tmp = vec3_scalarm(o->contact_normal, v_normal);
-                        tmp = vec3_sub(o->p.v, tmp);
-                        // only normalize if the tangent velocity
-                        // is not zero
-                        if (!vec3_iszero(tmp))
-                        {
-                                tmp = vec3_norm(tmp);
-                        }
-
-                        float mu = sqrtf(o->dynamic_mu *
-                                         m->dynamic_mu);
-                        tmp = vec3_scalarm(tmp, -fN * mu);
-                        f = vec3_add(f, tmp);
+                        f = vec3_add(f, friction_force_dyn(m, o));
                         continue;
                 }
 
@@ -126,7 +109,6 @@ void update_object(int step, struct world* w, struct object* o)
                         struct vertex* v0;
                         struct vertex* v1;
                         struct vertex* v2;
-                        struct vec3 tmp;
                         float t;
                         float u;
                         float v;
@@ -241,36 +223,19 @@ void update_object(int step, struct world* w, struct object* o)
                                         (2.0f * KM_PHYS_G);
                                 if (bounce_h < 0.002f)
                                 {
+                                        struct vec3 tmp;
+
                                         // less than 2mm, set the velocity in the normal's
                                         // direction to zero
                                         tmp = vec3_scalarm(n, v_normal);
                                         o->p.v = vec3_sub(o->p.v, tmp);
-                                        v_normal = 0.0f;
 
                                         // clamp object to mesh
                                         o->contact_mesh = m;
                                         o->contact_normal = n;
                                 }
-                                // TODO add quantize for the velocity
-
                                 // apply dynamic friction
-                                tmp = (struct vec3){ .a = {0.0f, 1.0f, 0.0f } };
-                                float fN = o->m * KM_PHYS_G *
-                                        fabsf(vec3_dot(n, tmp));
-                                // compute the tangent velocity
-                                tmp = vec3_scalarm(n, v_normal);
-                                tmp = vec3_sub(o->p.v, tmp);
-                                // only normalize if the tangent velocity
-                                // is not zero
-                                if (!vec3_iszero(tmp))
-                                {
-                                        tmp = vec3_norm(tmp);
-                                }
-
-                                float mu = sqrtf(o->dynamic_mu *
-                                                 m->dynamic_mu);
-                                tmp = vec3_scalarm(tmp, -fN * mu);
-                                f = vec3_add(f, tmp);
+                                f = vec3_add(f, friction_force_dyn(m, o));
 
                                 float vabs = vec3_dot(o->p.v, o->p.v);
                                 // is the object at rest?
@@ -316,7 +281,7 @@ void update_object(int step, struct world* w, struct object* o)
         f.y += o->m * w->g.y;
         f.z += o->m * w->g.z;
 
-        drag_force(&f, w, o);
+        f = vec3_sub(f, drag_force(w, o));
 
         // apply normal force
         if (o->contact_mesh)
@@ -340,15 +305,53 @@ void update_object(int step, struct world* w, struct object* o)
         o->p.v.z += o->p.a.z * w->dt * 0.5f;
 }
 
-void drag_force(struct vec3* f, const struct world* w, const struct object* o)
+struct vec3 drag_force(const struct world* w, const struct object* o)
 {
+        struct vec3 f;
         float half_rho = w->air_density * 0.5f;
         float cd = o->area * o->drag_c;
         float vs = sqrtf(vec3_dot(o->p.v, o->p.v));
 
-        f->x -= half_rho * vs * o->p.v.x * cd;
-        f->y -= half_rho * vs * o->p.v.y * cd;
-        f->z -= half_rho * vs * o->p.v.z * cd;
+        f.x = half_rho * vs * o->p.v.x * cd;
+        f.y = half_rho * vs * o->p.v.y * cd;
+        f.z = half_rho * vs * o->p.v.z * cd;
+
+        return f;
+}
+
+struct vec3 friction_force_dyn(const struct mesh* m, const struct object* o)
+{
+        struct vec3 up = (struct vec3){ .a = {0.0f, 1.0f, 0.0f } };
+        struct vec3 tv;
+        float mu;
+        float fN = o->m * KM_PHYS_G * vec3_dot(up, o->contact_normal);
+        float vn;
+
+        fN = fabsf(fN);
+        mu = sqrtf(m->dynamic_mu * o->dynamic_mu);
+
+        // compute the tangent velocity
+        vn = vec3_dot(o->contact_normal, o->p.v);
+        tv = vec3_scalarm(o->contact_normal, vn);
+        tv = vec3_sub(o->p.v, tv);
+        // only normalize if the tangent velocity
+        // is not zero
+        if (!vec3_iszero(tv))
+        {
+                tv = vec3_norm(tv);
+        }
+
+        // Friction force always oposes motion
+        return vec3_scalarm(tv, -fN * mu);
+}
+
+float friction_force_stat(const struct mesh* m, const struct object* o)
+{
+        struct vec3 up = (struct vec3){ .a = {0.0f, 1.0f, 0.0f } };
+        float mu = sqrtf(m->static_mu * o->static_mu);
+        float fN = o->m * KM_PHYS_G * vec3_dot(up, o->contact_normal);
+
+        return fabsf(fN) * mu;
 }
 
 void quantize_force(struct vec3* f)

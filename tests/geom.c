@@ -149,6 +149,7 @@ int main(void)
         // Particle is now moving away from surface,
         // colide again, should print error message
         printf("Expected error message\n");
+        vn = vec3_dot(n, p.v);
         collide_particle(&p, &n, vn, 1.0f);
 
         p.p.y = 0.1f;

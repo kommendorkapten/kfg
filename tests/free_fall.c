@@ -213,7 +213,7 @@ int upwards(int freq)
         f.y = o.m * w.g.y;
         f.z = o.m * w.g.z;
 
-        drag_force(&f, &w, &o);
+        f = vec3_sub(f, drag_force(&w, &o));
 
         // compute new accelerations
         o.p.a.x = f.x / o.m;
@@ -274,7 +274,7 @@ int bounce(int freq)
         f.y = o.m * w.g.y;
         f.z = o.m * w.g.z;
 
-        drag_force(&f, &w, &o);
+        f = vec3_sub(f, drag_force(&w, &o));
 
         // init acceleration
         o.p.a.x = 0.0f;
@@ -375,7 +375,7 @@ int test_drag(void)
 
                 o.p.v = v;
                 f = (struct vec3){ .a = {0.0f, 0.0f, 0.0f} };
-                drag_force(&f, &w, &o);
+                f = vec3_sub(f, drag_force(&w, &o));
 
                 float dx = fabsf(f.x - ex);
                 float dy = fabsf(f.y - ey);
@@ -410,7 +410,7 @@ int test_drag(void)
         // zero velocity must produce zero drag
         o.p.v = (struct vec3){ .a = {0.0f, 0.0f, 0.0f} };
         f = (struct vec3){ .a = {0.0f, 0.0f, 0.0f} };
-        drag_force(&f, &w, &o);
+        f = vec3_sub(f, drag_force(&w, &o));
         if (fabsf(f.x) > thr ||
             fabsf(f.y) > thr ||
             fabsf(f.z) > thr)
@@ -425,7 +425,7 @@ int test_drag(void)
         // drag must accumulate onto existing force
         o.p.v = (struct vec3){ .a = {1.0f, 0.0f, 0.0f} };
         f = (struct vec3){ .a = {10.0f, 5.0f, -3.0f} };
-        drag_force(&f, &w, &o);
+        f = vec3_sub(f, drag_force(&w, &o));
         float ex_x = 10.0f - hr_cd * 1.0f;
         if (fabsf(f.x - ex_x) > thr ||
             fabsf(f.y - 5.0f) > thr ||

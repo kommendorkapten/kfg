@@ -102,14 +102,28 @@ void update_object(int step, struct world* w, struct object* o);
 void quantize_force(struct vec3*);
 
 /**
- * Apply the drag force to an object
- * @param the object's force vector to update with the computed drag force
+ * Compute the drag force to an object
  * @param the the world instance to use
  * @param the object to compute draf force for
- * @return void
+ * @return the drag force
  */
-void drag_force(struct vec3*,
-                const struct world*,
-                const struct object*);
+struct vec3 drag_force(const struct world* w,
+                       const struct object* o);
+
+/** Compute the dynamic friction force between an object and a surface.
+    @param the surface
+    @param the object
+    @return the friction force
+*/
+struct vec3 friction_force_dyn(const struct mesh* e,
+                               const struct object* o);
+
+/** Compute the static friction force between an object and a surface.
+    @param the surface
+    @param the object
+    @return the friction force
+*/
+float friction_force_stat(const struct mesh* e,
+                          const struct object* o);
 
 #endif /* KM_PHYS_H */

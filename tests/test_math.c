@@ -38,6 +38,10 @@ int main(void)
         {
                 printf("test failed\n");
         }
+        else
+        {
+                printf("test successful\n");
+        }
 
         return fail;
 }
