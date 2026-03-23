@@ -11,7 +11,10 @@ METAL_SRCS   = $(wildcard metal/shaders/*.metal)
 METAL_AIRS   = $(METAL_SRCS:metal/shaders/%.metal=objs/%.air)
 METAL_LIB    = objs/shaders.metallib
 
-all: $(OBJS) objs/metal_renderer.o $(METAL_LIB)
+all: objs $(OBJS) objs/metal_renderer.o $(METAL_LIB)
+
+objs:
+	mkdir objs
 
 objs/metal_renderer.o: metal/metal_renderer.m
 	$(CC) $(OBJCFLAGS) -DSHADER_LIB_PATH='"shaders.metallib"' -c -o $@ $<

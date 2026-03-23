@@ -2,6 +2,7 @@
 #include <math.h>
 
 #include "km_geom.h"
+#include "km_phys.h"
 
 int main(void)
 {
@@ -12,12 +13,16 @@ int main(void)
         struct vec3 v2 = { .a = { 2.0f, 0.0f, 1.0f } };
         struct vec3 e1, e2;
         struct vec3 n;
-        struct particle p = {0};
+        struct object o = {0};
+        struct mesh m = {0};
         float vn;
         float t;
         float u;
         float v;
         int coll;
+
+        m.restitution = 1.0f;
+        o.restitution = 1.0f;
 
         e1 = vec3_sub(v1, v0);
         e2 = vec3_sub(v2, v0);
@@ -26,12 +31,12 @@ int main(void)
         n = vec3_norm(n);
 
         // Test that a particle collides
-        p.v = (struct vec3){ .a = { 0.0f, -1.0f, 0.0f } };
-        p.p = (struct vec3){ .a = { 0.0f, 0.5f, 0.0 } };
-        coll = ray_tri_intersect(&p, &v0, &v1, &v2, &t, &u, &v);
+        o.p.v = (struct vec3){ .a = { 0.0f, -1.0f, 0.0f } };
+        o.p.p = (struct vec3){ .a = { 0.0f, 0.5f, 0.0 } };
+        coll = ray_tri_intersect(&o.p, &v0, &v1, &v2, &t, &u, &v);
         if (!coll)
         {
-                print_particle(&p);
+                print_particle(&o.p);
                 printf("should have collided\n");
                 fail = 1;
         }
@@ -55,13 +60,13 @@ int main(void)
         }
 
         // Test that a particle won't collide (to far away)
-        p.p.y = 1.5f;
-        coll = ray_tri_intersect(&p, &v0, &v1, &v2, &t, &u, &v);
+        o.p.p.y = 1.5f;
+        coll = ray_tri_intersect(&o.p, &v0, &v1, &v2, &t, &u, &v);
         if (!coll)
         {
                 // As the particle's ray passes through the surface the
                 // result coll should be one
-                print_particle(&p);
+                print_particle(&o.p);
                 printf("should have collided\n");
                 fail = 1;
         }
@@ -74,11 +79,11 @@ int main(void)
         }
 
         // Test that a particle wont' collide (other side of surface)
-        p.p.y = -0.5f;
-        coll = ray_tri_intersect(&p, &v0, &v1, &v2, &t, &u, &v);
+        o.p.p.y = -0.5f;
+        coll = ray_tri_intersect(&o.p, &v0, &v1, &v2, &t, &u, &v);
         if (coll)
         {
-                print_particle(&p);
+                print_particle(&o.p);
                 printf("should not have collided\n");
                 fail = 1;
         }
@@ -91,13 +96,13 @@ int main(void)
 
         // Test that a particle won't collide (close but travel in opposite
         // direction
-        p.p.y = 0.1f;
-        p.v.y = 1.0f;
+        o.p.p.y = 0.1f;
+        o.p.v.y = 1.0f;
 
-        coll = ray_tri_intersect(&p, &v0, &v1, &v2, &t, &u, &v);
+        coll = ray_tri_intersect(&o.p, &v0, &v1, &v2, &t, &u, &v);
         if (coll)
         {
-                print_particle(&p);
+                print_particle(&o.p);
                 printf("should not have collided\n");
                 fail = 1;
         }
@@ -109,13 +114,13 @@ int main(void)
         }
 
         // Verify that a particle at the surface will not collide
-        p.p.y = v0.y;
-        p.v.y = -0.5f;
-        coll = ray_tri_intersect(&p, &v0, &v1, &v2, &t, &u, &v);
+        o.p.p.y = v0.y;
+        o.p.v.y = -0.5f;
+        coll = ray_tri_intersect(&o.p, &v0, &v1, &v2, &t, &u, &v);
 
         if (coll)
         {
-                print_particle(&p);
+                print_particle(&o.p);
                 printf("should not have collided\n");
                 fail = 1;
         }
@@ -126,49 +131,51 @@ int main(void)
         }
 
         // Verify that the collision response is correct
-        p.p.y = 0.1f;
-        p.v.x = 1.0;
-        p.v.y = -1.0f;
-        p.v.z = 1.0f;
+        o.p.p.y = 0.1f;
+        o.p.v.x = 1.0;
+        o.p.v.y = -1.0f;
+        o.p.v.z = 1.0f;
 
-        vn = vec3_dot(n, p.v);
-        collide_particle(&p, &n, vn, 1.0f);
+        vn = vec3_dot(n, o.p.v);
+        collide_object(&m, &o, n, vn);
         // with restitution constant of 1.0f, the v.y component should be
         // negated, x and z should be unaffected
-        if (fabsf(p.v.y - 1.0f) > 0.001)
+        if (fabsf(o.p.v.y - 1.0f) > 0.001)
         {
-                printf("unexpected p.v.y %f\n", p.v.y);
+                printf("unexpected p.v.y %f\n", o.p.v.y);
                 fail = 1;
         }
-        if (p.v.x != 1.0f || p.v.z != 1.0f)
+        if (o.p.v.x != 1.0f || o.p.v.z != 1.0f)
         {
-                printf("unexpected x %f or z %f\n", p.v.x, p.v.z);
+                printf("unexpected x %f or z %f\n", o.p.v.x, o.p.v.z);
                 fail = 1;
         }
 
         // Particle is now moving away from surface,
         // colide again, should print error message
         printf("Expected error message\n");
-        vn = vec3_dot(n, p.v);
-        collide_particle(&p, &n, vn, 1.0f);
+        vn = vec3_dot(n, o.p.v);
+        collide_object(&m, &o, n, vn);
 
-        p.p.y = 0.1f;
-        p.v.x = 1.0;
-        p.v.y = -1.0f;
-        p.v.z = 1.0f;
+        o.p.p.y = 0.1f;
+        o.p.v.x = 1.0;
+        o.p.v.y = -1.0f;
+        o.p.v.z = 1.0f;
 
-        vn = vec3_dot(n, p.v);
-        collide_particle(&p, &n, vn, 0.5f);
+        vn = vec3_dot(n, o.p.v);
+        o.restitution = 0.5f;
+        m.restitution = 0.5f;
+        collide_object(&m, &o, n, vn);
         // with restitution constant of 0.5f, the v.y component should be
         // negated and halfed, x and z should be unaffected
-        if (fabsf(p.v.y - 0.5f) > 0.001)
+        if (fabsf(o.p.v.y - 0.5f) > 0.001)
         {
-                printf("unexpected p.v.y %f\n", p.v.y);
+                printf("unexpected p.v.y %f\n", o.p.v.y);
                 fail = 1;
         }
-        if (p.v.x != 1.0f || p.v.z != 1.0f)
+        if (o.p.v.x != 1.0f || o.p.v.z != 1.0f)
         {
-                printf("unexpected x %f or z %f\n", p.v.x, p.v.z);
+                printf("unexpected x %f or z %f\n", o.p.v.x, o.p.v.z);
                 fail = 1;
         }
 

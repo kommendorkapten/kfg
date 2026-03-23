@@ -13,6 +13,13 @@
 #ifndef KM_MATH_H
 #define KM_MATH_H
 
+#ifndef MIN
+# define MIN(a, b) ((a) < (b) ? (a) : (b))
+#endif
+#ifndef MAX
+# define MAX(a, b) ((a) > (b) ? (a) : (b))
+#endif
+
 struct vec3
 {
         union
@@ -56,5 +63,6 @@ struct vec3 vec3_cross(struct vec3, struct vec3);
 float km_rsqrt(float x);
 void vec3_print(struct vec3 v);
 int vec3_iszero(struct vec3 v);
+void print_vec3(struct vec3 v);
 
 #endif /* KM_MATH_H */

@@ -301,7 +301,7 @@ int bounce(int freq)
         if (dp > 0)
         {
                 ret = 1;
-                printf("travelled too far %f @%dhz\n", dp, freq);
+                printf("travelled to far %f @%dhz\n", dp, freq);
         }
 
         return ret;
@@ -486,7 +486,7 @@ int test_coll(void)
                 {-1.1636f, 0.0019697f, -KM_PHYS_G},
                 // collision happens at step 2, object bounces up
                 // time of collision is at 0.094
-                {0.4298f, 0.00873f, -KM_PHYS_G}
+                {0.44147f, 0.00889f, -KM_PHYS_G}
         };
         int n = (int)(sizeof(cases) / sizeof(cases[0]));
 

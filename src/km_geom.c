@@ -15,14 +15,8 @@
 #include <math.h>
 #include <string.h>
 #include "km_geom.h"
+#include "km_phys.h"
 #include "../lib/cJSON.h"
-
-void print_particle(const struct particle* p)
-{
-        printf("pos: %f %f %f\n", p->p.x, p->p.y, p->p.z);
-        printf("vel: %f %f %f\n", p->v.x, p->v.y, p->v.z);
-        printf("acl: %f %f %f\n", p->a.x, p->a.y, p->a.z);
-}
 
 void print_vertex(const struct vertex* v)
 {
@@ -96,31 +90,64 @@ int ray_tri_intersect(const struct particle* r,
         return 1;
 }
 
-void collide_particle(struct particle* p,
-                      struct vec3* n,
-                      float vn,
-                      float rc)
+int compute_toi(struct collision* toi,
+                struct particle* p,
+                struct mesh* meshes,
+                int mesh_count)
 {
-        if (vn > 0.0)
+        int coll_test;
+        int ret = 0;
+
+        toi->t = INFINITY;
+
+        for (int s = 0; s < mesh_count; s++)
         {
-                // object is moving away from the surface
-                // should never happen
-                printf("WARNING: collision when moving away from a surface vn: %f \n", vn);
+                struct mesh* cm = meshes + s;
+                uint16_t num_tri = cm->index_count / 3;
 
-                printf("p.p %f %f %f\n", p->p.x, p->p.y, p->p.z);
-                printf("p.v %f %f %f\n", p->v.x, p->v.y, p->v.z);
-                printf("n %f %f %f\n", n->x, n->y, n->z);
+                for (uint16_t ti = 0; ti < num_tri; ti++)
+                {
+                        struct vec3 e1;
+                        struct vec3 e2;
 
-                return;
+                        struct vertex* v0;
+                        struct vertex* v1;
+                        struct vertex* v2;
+                        float t;
+                        float u;
+                        float v;
+
+                        mesh_get_tri(&v0,
+                                     &v1,
+                                     &v2,
+                                     cm,
+                                     ti);
+
+                        coll_test = ray_tri_intersect(p,
+                                                      &v0->pos,
+                                                      &v1->pos,
+                                                      &v2->pos,
+                                                      &t,
+                                                      &u,
+                                                      &v);
+
+                        if (coll_test)
+                        {
+                                if (t < toi->t)
+                                {
+                                        e1 = vec3_sub(v1->pos, v0->pos);
+                                        e2 = vec3_sub(v2->pos, v0->pos);
+                                        toi->n = vec3_norm(vec3_cross(e1, e2));
+                                        toi->t = t;
+                                        toi->m = cm;
+                                        toi->ti = ti;
+                                        ret = 1;
+                                }
+                        }
+                }
         }
 
-        // as n is normalized, vn is the velocity of the particle.
-        // Compute the scaling factor with the restitution, and
-        // reduce speed in the scaled normal's direction
-        float factor = (1.0f + rc) * vn;
-
-        struct vec3 ns = vec3_scalarm(*n, factor);
-        p->v = vec3_sub(p->v, ns);
+        return ret;
 }
 
 void mesh_free(struct mesh* m)
@@ -176,6 +203,18 @@ static struct mesh* parse_mesh(const cJSON* json_mesh)
         if (cJSON_IsNumber(rest))
         {
                 m->restitution = (float)rest->valuedouble;
+        }
+
+        /* friction coefficients (optional) */
+        cJSON* smu = cJSON_GetObjectItem(json_mesh, "static_mu");
+        if (cJSON_IsNumber(smu))
+        {
+                m->static_mu = (float)smu->valuedouble;
+        }
+        cJSON* dmu = cJSON_GetObjectItem(json_mesh, "dynamic_mu");
+        if (cJSON_IsNumber(dmu))
+        {
+                m->dynamic_mu = (float)dmu->valuedouble;
         }
 
         /* grid dimensions (optional) */
@@ -469,6 +508,8 @@ int write_meshes(const char* p, const struct mesh* meshes, int count)
                 }
 
                 cJSON_AddNumberToObject(jmesh, "restitution", m->restitution);
+                cJSON_AddNumberToObject(jmesh, "static_mu", m->static_mu);
+                cJSON_AddNumberToObject(jmesh, "dynamic_mu", m->dynamic_mu);
 
                 if (m->grid_x > 0 && m->grid_z > 0)
                 {

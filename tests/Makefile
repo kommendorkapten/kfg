@@ -1,4 +1,4 @@
-all: free_fall geom test_math test_friction
+all: free_fall geom test_math test_friction test_phys
 
 include ../common.mk
 
