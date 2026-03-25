@@ -72,7 +72,7 @@ int free_fall(int duration, int freq)
 
         // Free fall, no drag and no area
         o.p.p.y = 0.0f;
-        o.m = 1.0f;
+        object_set_m(&o, 1.0f);
         o.area = 0.0f;
         o.drag_c = 0.0;
 
@@ -136,7 +136,7 @@ int with_drag(int duration, int freq, float exp_p)
         int ret = 0;
 
         o.p.p.y = 0.0f;
-        o.m = 1.0f;
+        object_set_m(&o, 1.0f);
         o.area = 0.3f;
         o.drag_c = 0.47f;
 
@@ -199,7 +199,7 @@ int upwards(int freq)
         float vstart = 0.726153f;
 
         o.p.p.y = 0.0f;
-        o.m = 1.0f;
+        object_set_m(&o, 1.0f);
         o.area = 0.3f;
         o.drag_c = 0.47f;
 
@@ -260,7 +260,7 @@ int bounce(int freq)
         float pstart = -1.999002f;
 
         o.p.p.y = 0.0f;
-        o.m = 1.0f;
+        object_set_m(&o, 1.0f);
         o.area = 0.3f;
         o.drag_c = 0.47f;
 
@@ -301,7 +301,7 @@ int bounce(int freq)
         if (dp > 0)
         {
                 ret = 1;
-                printf("travelled to far %f @%dhz\n", dp, freq);
+                printf("travelled too far %f @%dhz\n", dp, freq);
         }
 
         return ret;
@@ -329,7 +329,7 @@ int test_drag(void)
 
         w.air_density = KM_PHYS_AIR_DENS;
         w.surface_count = 0;
-        o.m = 1.0f;
+        object_set_m(&o, 1.0f);
         o.area = 0.3f;
         o.drag_c = 0.47f;
 
@@ -470,7 +470,7 @@ int test_coll(void)
         o.p.v.y = -1.0f;
         o.p.p.y = 0.02f;
         o.p.a.y = - KM_PHYS_G;
-        o.m = 1.0f;
+        object_set_m(&o, 1.0f);
         o.area = 0.3f;
         o.drag_c = 0.0f;
         o.restitution = 0.5;

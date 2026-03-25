@@ -14,7 +14,7 @@ METAL_LIB    = objs/shaders.metallib
 all: objs $(OBJS) objs/metal_renderer.o $(METAL_LIB)
 
 objs:
-	mkdir objs
+	@mkdir -p objs
 
 objs/metal_renderer.o: metal/metal_renderer.m
 	$(CC) $(OBJCFLAGS) -DSHADER_LIB_PATH='"shaders.metallib"' -c -o $@ $<

@@ -41,15 +41,16 @@ struct particle
 struct object
 {
         struct particle p;
-        // The mass of the object
+        // The mass of the object. Prefer to call object_set_m(m)
+        // as this will automatically update the m_inv
         float m;
-        // 1/m
+        // 1/m.
         float m_inv;
         // The cross sectional area in the velocity direction
         float area;
         // the drag coefficient
         float drag_c;
-        // Set to 1 if this objevt is not moving
+        // Set to 1 if this object is not moving
         char steady_state;
         // restitution constant for collisions
         float restitution;
@@ -80,8 +81,6 @@ struct world
         int water_count;
         // threshod for squared velocity to considered to be in a steady state
         float ss_thr;
-        // treshold for squared velocity during collitions
-        float ss_c_thr;
 };
 
 struct water
@@ -102,6 +101,13 @@ struct water
  * @return void
  */
 void print_particle(const struct particle* p);
+
+/**
+ * Update the mass of an object. This will also update the m_inv
+ * @param m the object's new mass
+ * @return void
+ */
+void object_set_m(struct object* o, float m);
 
 /**
  * v and d must have the same spacing, and each vertex must have the
@@ -138,7 +144,6 @@ void update_objects(int, const struct world*, struct object*, int, char);
  * @return void
  */
 void update_object(int step, const struct world* w, struct object* o);
-void update_object2(int step, const struct world* w, struct object* o);
 
 /**
  * Run one velocity verlet step for one objects using the provided world.
@@ -155,7 +160,7 @@ void vverlet_step(const struct world* w, struct object* o, float dt);
  * of the normal of the triangle, scaled with the provided restitution.
  * During the collision, Coulomb friction is computed and used to update
  * the tangential velocity.
- * @param m the mesh to collde with.
+ * @param m the mesh to collide with.
  * @param o the object to collide.
  * @param n the collision normal.
  * @param vn the velocity of the particle across the collision normal.

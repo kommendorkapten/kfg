@@ -25,8 +25,8 @@ int main(int argc, char* argv[])
         const char* output = "mesh.json";
         const char* input_file = NULL;
         int num_peaks = 5;
-        int height = 5.0f;
-        int radius = 10.0f;
+        float height = 5.0f;
+        float radius = 10.0f;
         int opt;
 
         srand((unsigned)time(NULL));

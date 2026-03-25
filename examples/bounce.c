@@ -2,6 +2,7 @@
 #include <sched.h>
 #include <pthread.h>
 #include <string.h>
+#include <assert.h>
 #include "km_phys.h"
 #include "km_geom.h"
 #include "km_math.h"
@@ -60,6 +61,8 @@ int main(int argc, char** argv)
         objs[0].area = 0.3f;
         objs[0].drag_c = 0.47f;
         objs[0].restitution = 0.9f;
+        objs[0].dynamic_mu = 0.1f;
+        objs[0].m_inv = 1.0f;
         print_particle(&objs[0].p);
 
         // create a mesh that (-1,1) (-1,-1) (1, -1) (1,1) in the x-z plane
@@ -68,7 +71,8 @@ int main(int argc, char** argv)
         s1.indices = malloc(6 * sizeof(uint16_t));
         s1.vertex_count = 4;
         s1.index_count = 6;
-        s1.restitution = 1.0f;
+        s1.restitution = 0.6f;
+        s1.dynamic_mu = 0.5f;
 
         s1.vertices[0].pos = (struct vec3){ .a = {-1.0f, 0.0f, -1.0f} };
         s1.vertices[1].pos = (struct vec3){ .a = {-1.0f, 0.0f, 1.0f} };
@@ -88,7 +92,6 @@ int main(int argc, char** argv)
         w.surfaces = &s1;
         w.surface_count = 1;
         w.ss_thr   = 0.008f * 0.008f; // 8mm/s
-        w.ss_c_thr = 0.08f * 0.08f; // 8cm/s
 
         if (debug)
         {
@@ -112,7 +115,7 @@ int main(int argc, char** argv)
                         {
                                 t1 = now;
 
-                                printf("%f seconds\n", (step + 1.0f)/ FREQ);
+                                printf("%f seconds\n", ((float)step + 1.0f)/ FREQ);
                                 print = 1;
                         }
                 }
@@ -153,4 +156,5 @@ void init_object(struct object* o)
         o->p.v = (struct vec3){ .a = {0.0f, 0.0f, 0.0f} };
         o->p.a = (struct vec3){ .a = {0.0f, 0.0f, 0.0f} };
         o->steady_state = 0;
+        o->contact_mesh = NULL;
 }

@@ -99,7 +99,6 @@ int main(int argc, char *argv[])
         input.phi = acosf(cd.y / r);
         input.theta = atan2f(cd.z, cd.x);
 
-
         // Setup static meshes
         scene.w.surfaces = load_meshes(world_file, &scene.w.surface_count);
         if (scene.w.surfaces)

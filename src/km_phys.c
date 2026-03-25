@@ -14,6 +14,7 @@
 #include <stdlib.h>
 #include <math.h>
 #include <string.h>
+#include <assert.h>
 #include "km_phys.h"
 #include "km_math.h"
 #include "km_geom.h"
@@ -21,7 +22,7 @@
 // Clamp ratio, if the collision is close to head on, the
 // impulse force gives a lot of impulse damping in the
 // tangential velocity, Coulomb friction is often considered
-// lower than the dynamic fiction so adjust for that.
+// lower than the dynamic friction so adjust for that.
 #define CCR 0.7f
 
 void print_particle(const struct particle* p)
@@ -31,13 +32,18 @@ void print_particle(const struct particle* p)
         printf("acl: %f %f %f\n", p->a.x, p->a.y, p->a.z);
 }
 
+void object_set_m(struct object* o, float m)
+{
+        o->m = m;
+        o->m_inv = 1.0f / m;
+}
+
 void default_world(struct world* w, int fps)
 {
         w->g = (struct vec3){ .a = {0.0f, -KM_PHYS_G, 0.0f} };
         w->dt = 1.0f / (float)fps;
         w->air_density = KM_PHYS_AIR_DENS;
         w->ss_thr   = 0.008f * 0.008f; // 8mm/s
-        w->ss_c_thr = 0.08f * 0.08f; // 8cm/s
 }
 
 void update_objects(int step,
@@ -66,6 +72,8 @@ void update_object(int step, const struct world* w, struct object* o)
 
         (void)step;
 
+        assert(o->m_inv > 0.0f);
+
         if (o->steady_state)
         {
                 return;
@@ -92,7 +100,7 @@ void update_object(int step, const struct world* w, struct object* o)
                         vverlet_step(w, o, remaining);
                         break;
                 }
-                printf("v.y: %f\n", o->p.v.y);
+
                 // Advance particle to collision point
                 vverlet_step(w, o, toi.t * remaining);
 
@@ -131,8 +139,7 @@ void update_object(int step, const struct world* w, struct object* o)
                         // clamp object to mesh
                         o->contact_mesh = toi.m;
                         o->contact_normal = toi.n;
-                        printf("snap to grid\n");
-                        // Todo: update compute toi to ignire the messh
+                        // TODO: update compute toi to ignore the messh
                         // the particle is snapped to.
                 }
 
@@ -140,7 +147,7 @@ void update_object(int step, const struct world* w, struct object* o)
 
                 float vabs = vec3_dot(o->p.v, o->p.v);
                 // is the object at rest?
-                if (vabs < w->ss_c_thr)
+                if (vabs < w->ss_thr)
                 {
                         o->steady_state = 1;
                         break;
@@ -248,7 +255,7 @@ void collide_object(struct mesh* m,
         // Compute the scaling factor with the restitution, and
         // reduce speed in the scaled normal's direction.
         // Note that vn is reused from the coulomb friction calculation,
-        // this is fine as it only updates the tangential veloicty.
+        // this is fine as it only updates the tangential velocity.
         struct vec3 ns = vec3_scalarm(n, factor);
         o->p.v = vec3_sub(o->p.v, ns);
 }

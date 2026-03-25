@@ -197,6 +197,8 @@ static struct mesh* parse_mesh(const cJSON* json_mesh)
                 return NULL;
         }
         memset(m, 0, sizeof(*m));
+        m->static_mu = 0.5f;
+        m->dynamic_mu = 0.5f;
 
         /* restitution */
         cJSON* rest = cJSON_GetObjectItem(json_mesh, "restitution");
