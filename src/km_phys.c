@@ -221,11 +221,10 @@ void collide_object(struct mesh* m,
         {
                 // object is moving away from the surface
                 // should never happen
-                printf("WARNING: collision when moving away from a surface vn: %f \n", vn);
-
-                printf("p.p %f %f %f\n", o->p.p.x, o->p.p.y, o->p.p.z);
-                printf("p.v %f %f %f\n", o->p.v.x, o->p.v.y, o->p.v.z);
-                printf("n %f %f %f\n", n.x, n.y, n.z);
+                fprintf(stderr, "WARNING: collision when moving away from a surface vn: %f \n", vn);
+                fprintf(stderr, "p.p %f %f %f\n", o->p.p.x, o->p.p.y, o->p.p.z);
+                fprintf(stderr, "p.v %f %f %f\n", o->p.v.x, o->p.v.y, o->p.v.z);
+                fprintf(stderr, "n %f %f %f\n", n.x, n.y, n.z);
 
                 return;
         }

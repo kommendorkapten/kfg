@@ -149,16 +149,24 @@ int main(int argc, char* argv[])
                 {
                         input.quit = 1;
                 }
+                if (input.az == 'p')
+                {
+                        input.pause = !input.pause;
+                }
                 now = SDL_GetPerformanceCounter();
                 float dt  = (float)(now - last)
                         / (float)SDL_GetPerformanceFrequency();
                 last = now;
 
                 // update objects
-                for (int i = 0; i < scene.entity_count; i++)
+                if (!input.pause)
                 {
-                        update_object(step, &scene.w, &scene.entities[i].o);
+                        for (int i = 0; i < scene.entity_count; i++)
+                        {
+                                update_object(step, &scene.w, &scene.entities[i].o);
+                        }
                 }
+
 
                 renderer->render(renderer, &scene, dt);
 
