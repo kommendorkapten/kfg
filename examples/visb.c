@@ -45,9 +45,7 @@ int main(int argc, char* argv[])
 
         input.width = KM_DEFAULT_WIDTH;
         input.height = KM_DEFAULT_HEIGHT;
-        // current collision detection breaks down under 60hz with this
-        // scene.
-        default_world(&scene.w, 120);
+        default_world(&scene.w, 60);
 
         if (SDL_Init(SDL_INIT_VIDEO) < 0)
         {
@@ -104,6 +102,7 @@ int main(int argc, char* argv[])
         scene.entities[0].surface_count = 1;
         scene.entities[0].o.p.p.y = 3.0f;
         scene.entities[0].o.m = 1.0f;
+        scene.entities[0].o.m_inv = 1.0f;
         scene.entities[0].o.area = 0.3f;
         scene.entities[0].o.drag_c = 0.47f;
         scene.entities[0].o.restitution = 0.9f;
@@ -148,16 +147,24 @@ int main(int argc, char* argv[])
                 {
                         input.quit = 1;
                 }
+                if (input.az == 'p')
+                {
+                        input.pause = !input.pause;
+                }
                 now = SDL_GetPerformanceCounter();
                 float dt  = (float)(now - last)
                         / (float)SDL_GetPerformanceFrequency();
                 last = now;
 
                 // update objects
-                for (int i = 0; i < scene.entity_count; i++)
+                if (!input.pause)
                 {
-                        update_object(step, &scene.w, &scene.entities[i].o);
+                        for (int i = 0; i < scene.entity_count; i++)
+                        {
+                                update_object(step, &scene.w, &scene.entities[i].o);
+                        }
                 }
+
 
                 renderer->render(renderer, &scene, dt);
 

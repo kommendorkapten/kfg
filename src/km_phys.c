@@ -14,9 +14,31 @@
 #include <stdlib.h>
 #include <math.h>
 #include <string.h>
+#include <assert.h>
 #include "km_phys.h"
 #include "km_math.h"
 #include "km_geom.h"
+
+// Clamp ratio, if the collision is close to head on, the
+// impulse force gives a lot of impulse damping in the
+// tangential velocity, Coulomb friction is often considered
+// lower than the dynamic friction so adjust for that.
+#define CCR 0.7f
+
+void print_particle(const struct particle* p)
+{
+        printf("pos: %f %f %f\n", p->p.x, p->p.y, p->p.z);
+        printf("vel: %f %f %f\n", p->v.x, p->v.y, p->v.z);
+        printf("acl: %f %f %f\n", p->a.x, p->a.y, p->a.z);
+}
+
+void object_set_m(struct object* o, float m)
+{
+        assert(m > 0.0f);
+
+        o->m = m;
+        o->m_inv = 1.0f / m;
+}
 
 void default_world(struct world* w, int fps)
 {
@@ -24,11 +46,10 @@ void default_world(struct world* w, int fps)
         w->dt = 1.0f / (float)fps;
         w->air_density = KM_PHYS_AIR_DENS;
         w->ss_thr   = 0.008f * 0.008f; // 8mm/s
-        w->ss_c_thr = 0.08f * 0.08f; // 8cm/s
 }
 
 void update_objects(int step,
-                    struct world* w,
+                    const struct world* w,
                     struct object* objs,
                     int n,
                     char print)
@@ -46,22 +67,99 @@ void update_objects(int step,
         }
 }
 
-void update_object(int step, struct world* w, struct object* o)
+void update_object(int step, const struct world* w, struct object* o)
 {
-        struct particle p;
-        struct vec3 new_pos;
-        struct vec3 new_vel;
-        struct vec3 f = {0};
-        float t_coll = 0;
-        float remainder = 1.0f;
-        int coll = 0;
+        float remaining = w->dt;
+        int max_iter = 5;
+
+        (void)step;
+
+        assert(o->m_inv > 0.0f);
 
         if (o->steady_state)
         {
                 return;
         }
 
-        (void)step;
+        while (remaining > 0.0f && max_iter-- > 0)
+        {
+                struct particle p = {0};
+                struct collision toi;
+                float v_normal;
+                int coll = 0;
+
+                // use current pos and the tentative displacement
+                p.p = o->p.p;
+                p.v.x = (o->p.v.x + o->p.a.x * remaining * 0.5f) * remaining;
+                p.v.y = (o->p.v.y + o->p.a.y * remaining * 0.5f) * remaining;
+                p.v.z = (o->p.v.z + o->p.a.z * remaining * 0.5f) * remaining;
+
+                coll = compute_toi(&toi, &p, w->surfaces, w->surface_count);
+
+                // t is time to impact, measured in this step's displacement
+                if (!coll || toi.t > 1)
+                {
+                        vverlet_step(w, o, remaining);
+                        break;
+                }
+
+                // Advance particle to collision point
+                vverlet_step(w, o, toi.t * remaining);
+
+                // Move the object away from the surface
+                // a tiny bit (1mm)
+                struct vec3 ns = vec3_scalarm(toi.n, 0.001f);
+                o->p.p = vec3_add(o->p.p, ns);
+
+                // Collide the particle. This will mirror
+                // the velocity in the collision normal's
+                // direction and apply the restitution damping
+                v_normal = vec3_dot(o->p.v, toi.n);
+                collide_object(toi.m,
+                               o,
+                               toi.n,
+                               v_normal);
+
+                // Recompute v_normal after collision
+                v_normal = vec3_dot(o->p.v, toi.n);
+
+                // Check for contact manifold
+                // If the bounce height is negligible
+                // the apex is when when 0.5 m v^2 = mgh
+                // (kinetic energy equals potential energy)
+                float bounce_h = (v_normal * v_normal) /
+                        (2.0f * KM_PHYS_G);
+                if (bounce_h < 0.002f)
+                {
+                        struct vec3 tmp;
+
+                        // less than 2mm, set the velocity in the normal's
+                        // direction to zero
+                        tmp = vec3_scalarm(toi.n, v_normal);
+                        o->p.v = vec3_sub(o->p.v, tmp);
+
+                        // clamp object to mesh
+                        o->contact_mesh = toi.m;
+                        o->contact_normal = toi.n;
+                        // TODO: update compute toi to ignore the mesh
+                        // the particle is snapped to.
+                }
+
+                remaining -= toi.t * remaining;
+
+                float vabs = vec3_dot(o->p.v, o->p.v);
+                // is the object at rest?
+                if (vabs < w->ss_thr)
+                {
+                        o->steady_state = 1;
+                        break;
+                }
+        }
+}
+
+void vverlet_step(const struct world* w, struct object* o, float dt)
+{
+        struct vec3 f;
 
         if (o->contact_mesh)
         {
@@ -76,220 +174,31 @@ void update_object(int step, struct world* w, struct object* o)
         }
 
         // velocity half step (Verlet integration)
-        new_vel.x = o->p.v.x + o->p.a.x * w->dt * 0.5f;
-        new_vel.y = o->p.v.y + o->p.a.y * w->dt * 0.5f;
-        new_vel.z = o->p.v.z + o->p.a.z * w->dt * 0.5f;
+        o->p.v.x += o->p.a.x * dt * 0.5f;
+        o->p.v.y += o->p.a.y * dt * 0.5f;
+        o->p.v.z += o->p.a.z * dt * 0.5f;
 
-        // position
-        new_pos.x = o->p.p.x + new_vel.x * w->dt;
-        new_pos.y = o->p.p.y + new_vel.y * w->dt;
-        new_pos.z = o->p.p.z + new_vel.z * w->dt;
+        o->p.p.x += o->p.v.x * dt;
+        o->p.p.y += o->p.v.y * dt;
+        o->p.p.z += o->p.v.z * dt;
 
-        // Copy old pos
-        // Compute the collision against a particle with the
-        // original position and velocity set to the step's
-        // velocity, i.e new_pos - old_pos.
-        p.p = o->p.p;
-        p.v = vec3_sub(new_pos, p.p);
-
-        // collision detection
-        for (int s = 0; s < w->surface_count; s++)
-        {
-                struct mesh* m = w->surfaces + s;
-                int num_tri = m->index_count / 3;
-
-                if (m == o->contact_mesh)
-                {
-                        f = vec3_add(f, friction_force_dyn(m, o));
-                        continue;
-                }
-
-                for (int ti = 0; ti < num_tri; ti++)
-                {
-                        struct vertex* v0;
-                        struct vertex* v1;
-                        struct vertex* v2;
-                        float t;
-                        float u;
-                        float v;
-                        int coll_test;
-
-                        mesh_get_tri(&v0,
-                                     &v1,
-                                     &v2,
-                                     m,
-                                     ti);
-
-                        // break out into new function
-                        coll_test = ray_tri_intersect(&p,
-                                                      &v0->pos,
-                                                      &v1->pos,
-                                                      &v2->pos,
-                                                      &t,
-                                                      &u,
-                                                      &v);
-
-                        /*
-                          if a collision happens, it's measured in
-                          units of the length, which is the current
-                          step's computed velocity. The point of
-                          intersection must be in this step.
-                          For a sphere (radius > 0), the surface is
-                          reached when the center is still radius
-                          away, so we allow t up to
-                          1 + radius / |displacement|.
-                        */
-                        if (coll_test)
-                        {
-                                float inv_disp_len = km_rsqrt(
-                                        vec3_dot(p.v, p.v));
-                                float t_max = remainder;
-                                struct vec3 e1 = vec3_sub(v1->pos, v0->pos);
-                                struct vec3 e2 = vec3_sub(v2->pos, v0->pos);
-                                struct vec3 n = vec3_cross(e1, e2);
-                                float v_normal;
-
-                                n = vec3_norm(n);
-
-                                if (inv_disp_len < 1e5f &&
-                                    o->p.rad > 0.0f) {
-                                        // this should be
-                                        // t = t - o->p.rad * inv_disp_ln
-                                        // verify this
-                                        t_max += o->p.rad * inv_disp_len;
-                                }
-
-                                if (t > t_max)
-                                {
-                                        // too far away
-                                        continue;
-                                }
-
-                                t_coll = t * remainder;
-                                coll = 1;
-
-                                // Before updating the velocity move the
-                                // object to the surface.
-                                // The distance is t if radius is zero,
-                                // t_max - t if radius is > 0
-                                if (o->p.rad > 0.0f)
-                                {
-                                        t = t_max - t;
-                                }
-
-                                // The collision happens at time t * w->dt,
-                                // not w->dt wihich is used to integrate the
-                                // velocity, update the velocity to the
-                                // expected velocity at impact.
-                                o->p.v.x += o->p.a.x * w->dt * 0.5f * t_coll;
-                                o->p.v.y += o->p.a.y * w->dt * 0.5f * t_coll;
-                                o->p.v.z += o->p.a.z * w->dt * 0.5f * t_coll;
-
-                                v_normal = vec3_dot(o->p.v, n);
-
-                                // Collide the particle. This will mirror
-                                // the velocity in the collision normal's
-                                // direction and apply the restitution damping
-                                float rc = sqrtf(m->restitution *
-                                                 o->restitution);
-                                collide_particle(&o->p,
-                                                 &n,
-                                                 v_normal,
-                                                 rc);
-
-                                // add the rest of the velocity step
-                                o->p.v.x += o->p.a.x * w->dt * 0.5f * (remainder - t_coll);
-                                o->p.v.y += o->p.a.y * w->dt * 0.5f * (remainder - t_coll);
-                                o->p.v.z += o->p.a.z * w->dt * 0.5f * (remainder - t_coll);
-
-                                // recompute v_normal as it's now different
-                                // after the bounce
-                                v_normal = vec3_dot(o->p.v, n);
-
-                                // Move object to the collision surface
-                                // todo: this shadows float v
-                                struct vec3 v = vec3_scalarm(p.v, t);
-                                o->p.p = vec3_add(o->p.p, v);
-
-                                // Move the object away from the surface
-                                // a tiny bit (1mm)
-                                struct vec3 ns = vec3_scalarm(n, 0.001f);
-                                o->p.p = vec3_add(o->p.p, ns);
-
-                                // check if the bounce height is negligible
-                                // the apex is when when 0.5 m v^2 = mgh
-                                // (kinetic energy equals potential energy)
-                                float bounce_h = (v_normal * v_normal) /
-                                        (2.0f * KM_PHYS_G);
-                                if (bounce_h < 0.002f)
-                                {
-                                        struct vec3 tmp;
-
-                                        // less than 2mm, set the velocity in the normal's
-                                        // direction to zero
-                                        tmp = vec3_scalarm(n, v_normal);
-                                        o->p.v = vec3_sub(o->p.v, tmp);
-
-                                        // clamp object to mesh
-                                        o->contact_mesh = m;
-                                        o->contact_normal = n;
-                                }
-                                // apply dynamic friction
-                                f = vec3_add(f, friction_force_dyn(m, o));
-
-                                float vabs = vec3_dot(o->p.v, o->p.v);
-                                // is the object at rest?
-                                if (vabs < w->ss_c_thr)
-                                {
-                                        o->steady_state = 1;
-                                        break;
-                                }
-
-                                remainder -= t_coll;
-                                // we have collided with this mesh, goto next
-                                break;
-                        }
-                }
-        }
-        if (coll)
-        {
-                // Note: this is bug. The current code assumes
-                // that it will only collide with one surface per step
-                // and so t_coll is the first collision time. If multiple
-                // surfaces are hit during the same step this will increase
-                // the energy of the particle too much.
-
-                // Integrate the remainding time from after the collision
-                float dt = (1.0f - t_coll) * w->dt;
-
-                o->p.p.x = o->p.p.x + o->p.v.x * dt;
-                o->p.p.y = o->p.p.y + o->p.v.y * dt;
-                o->p.p.z = o->p.p.z + o->p.v.z * dt;
-        }
-        else
-        {
-                // Update position and velocity if there was no collision
-                o->p.p = new_pos;
-                o->p.v = new_vel;
-        }
-
-        // compute all forces
-        // gravity
-        // We accumulate on top of f, because f might contain friction
-        // from a collision we just evaluated this step
-        f.x += o->m * w->g.x;
-        f.y += o->m * w->g.y;
-        f.z += o->m * w->g.z;
+        // Resolve forces
+        f.x = o->m * w->g.x;
+        f.y = o->m * w->g.y;
+        f.z = o->m * w->g.z;
 
         f = vec3_sub(f, drag_force(w, o));
 
-        // apply normal force
+        // apply normal force and friction
         if (o->contact_mesh)
         {
+                f = vec3_add(f, friction_force_dyn(o->contact_mesh, o));
+
                 float f_normal = vec3_dot(f, o->contact_normal);
                 // The surface pushes back against forces pushing into it
                 if (f_normal < 0.0f) {
-                        struct vec3 f_corr = vec3_scalarm(o->contact_normal, f_normal);
+                        struct vec3 f_corr = vec3_scalarm(o->contact_normal,
+                                                          f_normal);
                         f = vec3_sub(f, f_corr);
                 }
         }
@@ -300,9 +209,52 @@ void update_object(int step, struct world* w, struct object* o)
         o->p.a.z = f.z / o->m;
 
         // velocity take two
-        o->p.v.x += o->p.a.x * w->dt * 0.5f;
-        o->p.v.y += o->p.a.y * w->dt * 0.5f;
-        o->p.v.z += o->p.a.z * w->dt * 0.5f;
+        o->p.v.x += o->p.a.x * dt * 0.5f;
+        o->p.v.y += o->p.a.y * dt * 0.5f;
+        o->p.v.z += o->p.a.z * dt * 0.5f;
+}
+
+void collide_object(struct mesh* m,
+                    struct object* o,
+                    struct vec3 n,
+                    float vn)
+{
+        if (vn > 0.0)
+        {
+                // object is moving away from the surface
+                // should never happen
+                fprintf(stderr, "WARNING: collision when moving away from a surface vn: %f \n", vn);
+                fprintf(stderr, "p.p %f %f %f\n", o->p.p.x, o->p.p.y, o->p.p.z);
+                fprintf(stderr, "p.v %f %f %f\n", o->p.v.x, o->p.v.y, o->p.v.z);
+                fprintf(stderr, "n %f %f %f\n", n.x, n.y, n.z);
+
+                return;
+        }
+
+        struct vec3 vt = vec3_sub(o->p.v, vec3_scalarm(n, vn));
+        float rc = sqrtf(m->restitution * o->restitution);
+        float mu = sqrtf(m->dynamic_mu * o->dynamic_mu);
+
+        // Apply Coulomb friction to the tangential velocity.
+        float factor = (1.0f + rc) * vn;
+
+        if (!vec3_iszero(vt))
+        {
+                float jn = -factor * o->m;
+                struct vec3 vt_dir = vec3_norm(vt);
+                float jf = MIN(mu * fabsf(jn), CCR * o->m * sqrtf(vec3_dot(vt, vt)));
+
+                struct vec3 res = vec3_scalarm(vt_dir, jf * o->m_inv);
+                o->p.v = vec3_sub(o->p.v, res);
+        }
+
+        // as n is normalized, vn is the velocity of the particle.
+        // Compute the scaling factor with the restitution, and
+        // reduce speed in the scaled normal's direction.
+        // Note that vn is reused from the coulomb friction calculation,
+        // this is fine as it only updates the tangential velocity.
+        struct vec3 ns = vec3_scalarm(n, factor);
+        o->p.v = vec3_sub(o->p.v, ns);
 }
 
 struct vec3 drag_force(const struct world* w, const struct object* o)
@@ -343,6 +295,31 @@ struct vec3 friction_force_dyn(const struct mesh* m, const struct object* o)
 
         // Friction force always oposes motion
         return vec3_scalarm(tv, -fN * mu);
+}
+
+struct vec3 friction_force_coulomb(const struct mesh* m,
+                                   const struct object* o,
+                                   struct vec3 n)
+{
+        float vn = vec3_dot(n, o->p.v);
+        struct vec3 vt = vec3_sub(o->p.v, vec3_scalarm(n, vn));
+        if (vec3_iszero(vt))
+        {
+                struct vec3 f = {0};
+                return f;
+        }
+
+        float rc = sqrtf(m->restitution * o->restitution);
+        float mu = sqrtf(m->dynamic_mu * o->dynamic_mu);
+        float jn = -(1.0f + rc) * vn * o->m;
+        struct vec3 vt_dir = vec3_norm(vt);
+        float jf = MIN(mu * fabsf(jn), CCR * o->m * sqrtf(vec3_dot(vt, vt)));
+
+        // only update the friction part, collision resolving updates
+        // the velocity to move away from the surface
+        struct vec3 res = vec3_scalarm(vt_dir, jf * o->m_inv);
+
+        return res;
 }
 
 float friction_force_stat(const struct mesh* m, const struct object* o)

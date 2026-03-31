@@ -16,41 +16,7 @@
 #include <stdint.h>
 #include "km_math.h"
 
-struct particle
-{
-        // Position
-        struct vec3 p;
-        // Velocity
-        struct vec3 v;
-        // Acceleration
-        struct vec3 a;
-        // Rotation around each axis, in radians
-        struct vec3 r;
-        // Bounding sphere radius (0 = point particle)
-        float rad;
-};
-
-struct object
-{
-        struct particle p;
-        // The mass of the object
-        float m;
-        // The cross sectional area in the velocity direction
-        float area;
-        // the drag coefficient
-        float drag_c;
-        // Set to 1 if this objevt is not moving
-        char steady_state;
-        // restitution constant for collisions
-        float restitution;
-        // static friction coefficient
-        float static_mu;
-        // dynamic friction coefficient
-        float dynamic_mu;
-        // Persistent contact cache
-        struct mesh* contact_mesh;
-        struct vec3 contact_normal;
-};
+struct particle;
 
 struct vertex
 {
@@ -82,12 +48,13 @@ struct mesh
         uint16_t grid_z;
 };
 
-/**
- * Print a particle to stdout
- * @param p the particle to print
- * @return void
- */
-void print_particle(const struct particle* p);
+struct collision
+{
+        struct vec3 n;
+        float t;
+        struct mesh* m;
+        uint16_t ti;
+};
 
 /**
  * Print a vertex to stdout
@@ -129,19 +96,17 @@ int ray_tri_intersect(const struct particle* r,
                       float* v);
 
 /**
- * Collide a particle with a triangle.
- * The particle's velocity is updated to bounce back in the direction
- * of the normal of the triangle, scaled with the provided restitution.
- * @param p the particle to collide
- * @param n the collision normal
- * @param vn the velocity of the particle across the collision normal
- * @param rc the combined restitution coefficent (prefer geometric mean)
- * @return void
+ * Find the mesh that the particle p first will collide with.
+ * @param t the toi to populate
+ * @param p the particle
+ * @param m an array of meshes to test against
+ * @param mc mesh count
+ * @return 1 if a collision happend, 0 otherwise
  */
-void collide_particle(struct particle* p,
-                      struct vec3* n,
-                      float vn,
-                      float rc);
+int compute_toi(struct collision* t,
+                struct particle* p,
+                struct mesh* m,
+                int mc);
 
 /**
  * Read the provided json file, and return an array of meshes.

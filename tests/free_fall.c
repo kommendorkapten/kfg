@@ -72,7 +72,7 @@ int free_fall(int duration, int freq)
 
         // Free fall, no drag and no area
         o.p.p.y = 0.0f;
-        o.m = 1.0f;
+        object_set_m(&o, 1.0f);
         o.area = 0.0f;
         o.drag_c = 0.0;
 
@@ -136,7 +136,7 @@ int with_drag(int duration, int freq, float exp_p)
         int ret = 0;
 
         o.p.p.y = 0.0f;
-        o.m = 1.0f;
+        object_set_m(&o, 1.0f);
         o.area = 0.3f;
         o.drag_c = 0.47f;
 
@@ -199,7 +199,7 @@ int upwards(int freq)
         float vstart = 0.726153f;
 
         o.p.p.y = 0.0f;
-        o.m = 1.0f;
+        object_set_m(&o, 1.0f);
         o.area = 0.3f;
         o.drag_c = 0.47f;
 
@@ -260,7 +260,7 @@ int bounce(int freq)
         float pstart = -1.999002f;
 
         o.p.p.y = 0.0f;
-        o.m = 1.0f;
+        object_set_m(&o, 1.0f);
         o.area = 0.3f;
         o.drag_c = 0.47f;
 
@@ -329,7 +329,7 @@ int test_drag(void)
 
         w.air_density = KM_PHYS_AIR_DENS;
         w.surface_count = 0;
-        o.m = 1.0f;
+        object_set_m(&o, 1.0f);
         o.area = 0.3f;
         o.drag_c = 0.47f;
 
@@ -470,7 +470,7 @@ int test_coll(void)
         o.p.v.y = -1.0f;
         o.p.p.y = 0.02f;
         o.p.a.y = - KM_PHYS_G;
-        o.m = 1.0f;
+        object_set_m(&o, 1.0f);
         o.area = 0.3f;
         o.drag_c = 0.0f;
         o.restitution = 0.5;
@@ -486,7 +486,7 @@ int test_coll(void)
                 {-1.1636f, 0.0019697f, -KM_PHYS_G},
                 // collision happens at step 2, object bounces up
                 // time of collision is at 0.094
-                {0.4298f, 0.00873f, -KM_PHYS_G}
+                {0.44147f, 0.00889f, -KM_PHYS_G}
         };
         int n = (int)(sizeof(cases) / sizeof(cases[0]));
 

@@ -29,6 +29,13 @@ int km_process_input(struct km_input *input, struct scene* scene)
 
                 case SDL_KEYDOWN:
 
+                        if (event.key.keysym.sym >= SDLK_a &&
+                            event.key.keysym.sym <= SDLK_z)
+                        {
+                                input->az = event.key.keysym.sym;
+                                break;
+                        }
+
                         d = vec3_sub(scene->cam.pos,
                                      scene->cam.center);
                         r = sqrtf(vec3_dot(d, d));
@@ -71,12 +78,6 @@ int km_process_input(struct km_input *input, struct scene* scene)
                         scene->cam.pos.y = r * cosf(input->phi);
                         scene->cam.pos.z = r * sinf(input->phi) *
                                 sinf(input->theta);
-
-                        if (event.key.keysym.sym >= SDLK_a &&
-                            event.key.keysym.sym <= SDLK_z)
-                        {
-                                input->az = event.key.keysym.sym;
-                        }
                         break;
                 case SDL_MOUSEMOTION:
                 {

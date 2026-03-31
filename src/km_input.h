@@ -16,12 +16,11 @@ struct km_input
         int mouse_dx;
         int mouse_dy;
         int quit;
+        int pause;
         int window_resized;
-        int az;
-        // azimuth
-        float theta;
-        // inclination
-        float phi;
+        int az;      // key press a-z
+        float theta; // azimuth
+        float phi;   // inclination
 };
 
 /**

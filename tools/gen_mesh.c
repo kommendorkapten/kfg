@@ -25,8 +25,8 @@ int main(int argc, char* argv[])
         const char* output = "mesh.json";
         const char* input_file = NULL;
         int num_peaks = 5;
-        int height = 1.0f;
-        int radius = 10.0f;
+        float height = 5.0f;
+        float radius = 10.0f;
         int opt;
 
         srand((unsigned)time(NULL));
@@ -120,7 +120,8 @@ int main(int argc, char* argv[])
                         fprintf(stderr, "failed to generate mesh\n");
                         return 1;
                 }
-
+                m->static_mu = 0.5f;
+                m->dynamic_mu = 0.5f;
                 mesh_translate(m, &sv);
                 mesh_heightmap(m, num_peaks, height, radius);
                 mesh_colorize(m);
