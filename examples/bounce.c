@@ -2,7 +2,6 @@
 #include <sched.h>
 #include <pthread.h>
 #include <string.h>
-#include <assert.h>
 #include "km_phys.h"
 #include "km_geom.h"
 #include "km_math.h"
