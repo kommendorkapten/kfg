@@ -20,6 +20,7 @@ DEPS = ../src/objs/km_geom.o \
 	../src/objs/km_mat4.o \
 	../src/objs/km_window.o \
 	../src/objs/metal_renderer.o \
+	../src/objs/km_plat.o \
 	../lib/objs/cJSON.o
 
 all: objs $(TARGET)

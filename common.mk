@@ -1,9 +1,9 @@
 CC = cc
-CFLAGS = -D_POSIX_C_SOURCE=200809L -D_DARWIN_C_SOURCE \
+CFLAGS = -D_POSIX_C_SOURCE=200809L \
          -Wall -W -Wextra -Wconversion -Wsign-conversion -Werror \
          -pedantic -O2 \
          -std=c11
-OBJCFLAGS = -D_POSIX_C_SOURCE=200809L -D_DARWIN_C_SOURCE \
+OBJCFLAGS = -D_POSIX_C_SOURCE=200809L \
          -Wall -W -Wextra -Wconversion -Wsign-conversion -Werror \
          -pedantic -O2 \
          -fobjc-arc
@@ -21,9 +21,15 @@ LINT_FLAGS = --analyze \
 LDFLAGS =
 LIBS =
 
+UNAME := $(shell uname -s)
+
 ifdef DEBUG
     CFLAGS += -g -DDEBUG
     OBJCFLAGS += -g -DDEBUG
+endif
+
+ifeq ($(UNAME),Linux)
+LDFLAGS += -lm
 endif
 
 SRCS ?= $(wildcard *.c)

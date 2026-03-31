@@ -8,22 +8,23 @@ DEPS = ../src/objs/km_geom.o \
         ../src/objs/km_math.o \
         ../src/objs/km_phys.o \
         ../src/objs/timing.o \
+	../src/objs/km_plat.o \
         ../lib/objs/cJSON.o
 
 free_fall: free_fall.c $(DEPS)
-	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $^ $(LIBS)
+	$(CC) $(CFLAGS) -o $@ $^ $(LIBS) $(LDFLAGS)
 
 geom: geom.c $(DEPS)
-	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $^ $(LIBS)
+	$(CC) $(CFLAGS) -o $@ $^ $(LIBS) $(LDFLAGS)
 
 test_math: test_math.c $(DEPS)
-	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $^ $(LIBS)
+	$(CC) $(CFLAGS) -o $@ $^ $(LIBS) $(LDFLAGS)
 
 test_friction: test_friction.c $(DEPS)
-	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $^ $(LIBS)
+	$(CC) $(CFLAGS) -o $@ $^ $(LIBS) $(LDFLAGS)
 
 test_phys: test_phys.c $(DEPS)
-	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $^ $(LIBS)
+	$(CC) $(CFLAGS) -o $@ $^ $(LIBS) $(LDFLAGS)
 
 test: free_fall geom test_math test_friction test_phys
 	./free_fall
