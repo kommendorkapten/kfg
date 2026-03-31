@@ -41,7 +41,7 @@ struct particle
 struct object
 {
         struct particle p;
-        // The mass of the object. Prefer to call object_set_m(m)
+        // The mass of the object. Prefer to call object_set_m(o, m)
         // as this will automatically update the m_inv
         float m;
         // 1/m.

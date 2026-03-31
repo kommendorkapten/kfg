@@ -34,6 +34,8 @@ void print_particle(const struct particle* p)
 
 void object_set_m(struct object* o, float m)
 {
+        assert(m > 0.0f);
+
         o->m = m;
         o->m_inv = 1.0f / m;
 }
@@ -139,7 +141,7 @@ void update_object(int step, const struct world* w, struct object* o)
                         // clamp object to mesh
                         o->contact_mesh = toi.m;
                         o->contact_normal = toi.n;
-                        // TODO: update compute toi to ignore the messh
+                        // TODO: update compute toi to ignore the mesh
                         // the particle is snapped to.
                 }
 
@@ -234,10 +236,6 @@ void collide_object(struct mesh* m,
         float mu = sqrtf(m->dynamic_mu * o->dynamic_mu);
 
         // Apply Coulomb friction to the tangential velocity.
-        // The normal velocity and bounce is taken care of in the
-        // collide particle function.
-        // Todo: move coulomb friction computation into
-        // collide_particle function.
         float factor = (1.0f + rc) * vn;
 
         if (!vec3_iszero(vt))

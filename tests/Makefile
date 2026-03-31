@@ -33,4 +33,4 @@ test: free_fall geom test_math test_friction test_phys
 #	./test_friction
 
 clean:
-	rm -rf free_fall geom test_math test_friction objs/*
+	rm -rf free_fall geom test_math test_friction test_phys objs/*

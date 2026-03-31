@@ -45,8 +45,6 @@ int main(int argc, char* argv[])
 
         input.width = KM_DEFAULT_WIDTH;
         input.height = KM_DEFAULT_HEIGHT;
-        // current collision detection breaks down under 60hz with this
-        // scene.
         default_world(&scene.w, 60);
 
         if (SDL_Init(SDL_INIT_VIDEO) < 0)
