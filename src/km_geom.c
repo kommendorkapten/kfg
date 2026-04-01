@@ -430,13 +430,13 @@ struct mesh* load_meshes(const char* p, int* count)
 
         if (n > UINT16_MAX)
         {
-                printf("too many meshes found: %lu\n", n);
+                printf("too many meshes found: %zu\n", n);
                 cJSON_Delete(root);
                 return NULL;
         }
 
 #ifdef DEBUG
-        printf("found %d meshes\n", n);
+        printf("found %zu meshes\n", n);
 #endif
 
         /* Parse each mesh into its own allocation */
@@ -590,6 +590,11 @@ struct mesh* gen_mesh(float x, float y, float d)
         int t_count = q_count * 2;
         int i_count = t_count * 3;
         int ip = 0;
+
+        if (!m)
+        {
+                return NULL;
+        }
 
         // check these for size
         if (v_count > UINT16_MAX || i_count > UINT16_MAX)

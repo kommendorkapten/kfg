@@ -1,4 +1,4 @@
-SUBDIRS = src tests examples tools
+SUBDIRS = lib src tests examples tools
 
 all:
 	@for dir in $(SUBDIRS); do \

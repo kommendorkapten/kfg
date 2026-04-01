@@ -16,7 +16,7 @@
 /**
  * Generate a random value that's uniformly distributed between 0 and 1
  * @param void
- * @return a randome float between 0 and 1
+ * @return a random float between 0 and 1
  */
 float rand_u01(void);
 

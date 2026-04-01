@@ -11,18 +11,18 @@
 */
 
 #include <stdlib.h>
+#include "km_plat.h"
 #if __linux
 # include <errno.h>
 # include <stdint.h>
 # include <sys/random.h>
-#include "km_plat.h"
 #endif
 
 float rand_u01(void)
 {
-#if TARGET_OS_OSX
+#if __APPLE__
         return (float)arc4random() / (float)UINT32_MAX;
-#elif __linux
+#elif __linux__
         uint32_t x;
         unsigned char *p = (unsigned char*)&x;
         size_t left = sizeof(x);
