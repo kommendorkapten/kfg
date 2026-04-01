@@ -16,6 +16,7 @@
 #include <string.h>
 #include "km_geom.h"
 #include "km_phys.h"
+#include "km_plat.h"
 #include "../lib/cJSON.h"
 
 void print_vertex(const struct vertex* v)
@@ -419,19 +420,27 @@ struct mesh* load_meshes(const char* p, int* count)
                 return NULL;
         }
 
-        int n = cJSON_GetArraySize(meshes);
+        size_t n = (size_t)cJSON_GetArraySize(meshes);
         if (n == 0)
         {
                 printf("failed to get array size\n");
                 cJSON_Delete(root);
                 return NULL;
         }
+
+        if (n > UINT16_MAX)
+        {
+                printf("too many meshes found: %zu\n", n);
+                cJSON_Delete(root);
+                return NULL;
+        }
+
 #ifdef DEBUG
-        printf("found %d meshes\n", n);
+        printf("found %zu meshes\n", n);
 #endif
 
         /* Parse each mesh into its own allocation */
-        struct mesh** tmp = malloc((unsigned long)n * sizeof(struct mesh*));
+        struct mesh** tmp = malloc(n * sizeof(struct mesh*));
         if (!tmp)
         {
                 cJSON_Delete(root);
@@ -439,7 +448,7 @@ struct mesh* load_meshes(const char* p, int* count)
         }
 
         int parsed = 0;
-        for (int i = 0; i < n; i++)
+        for (int i = 0; i < (int)n; i++)
         {
                 cJSON* item = cJSON_GetArrayItem(meshes, i);
                 tmp[i] = parse_mesh(item);
@@ -461,10 +470,10 @@ struct mesh* load_meshes(const char* p, int* count)
         cJSON_Delete(root);
 
         /* Consolidate into a single contiguous array */
-        struct mesh* result = malloc((unsigned long)n * sizeof(struct mesh));
+        struct mesh* result = malloc(n * sizeof(struct mesh));
         if (!result)
         {
-                for (int i = 0; i < n; i++)
+                for (int i = 0; i < (int)n; i++)
                 {
                         mesh_free(tmp[i]);
                         free(tmp[i]);
@@ -473,14 +482,14 @@ struct mesh* load_meshes(const char* p, int* count)
                 return NULL;
         }
 
-        for (int i = 0; i < n; i++)
+        for (int i = 0; i < (int)n; i++)
         {
                 result[i] = *tmp[i];
                 free(tmp[i]);
         }
         free(tmp);
 
-        *count = n;
+        *count = (int)n;
         return result;
 }
 
@@ -572,18 +581,38 @@ int write_meshes(const char* p, const struct mesh* meshes, int count)
 
 struct mesh* gen_mesh(float x, float y, float d)
 {
+        int count_x = (int)(x / d) + 1;
+        int count_y = (int)(y / d) + 1;
+
+        if (count_x > UINT16_MAX || count_y > UINT16_MAX)
+        {
+                fprintf(stderr, "too large mesh (%d x %d)\n",
+                        count_x, count_y);
+                return NULL;
+        }
         struct mesh* m = malloc(sizeof(*m));
         struct vertex* v;
-        uint16_t count_x = (uint16_t)(x / d) + 1;
-        uint16_t count_y = (uint16_t)(y / d) + 1;
         int v_count = count_x * count_y;
-        uint16_t q_count = (count_x - 1) * (count_y - 1);
-        uint16_t t_count = q_count * 2;
+        int q_count = (count_x - 1) * (count_y - 1);
+        int t_count = q_count * 2;
         int i_count = t_count * 3;
-        uint16_t ip = 0;
+        int ip = 0;
 
-        m->grid_x = count_x;
-        m->grid_z = count_y;
+        if (!m)
+        {
+                return NULL;
+        }
+
+        if (v_count > UINT16_MAX || i_count > UINT16_MAX)
+        {
+                free(m);
+                fprintf(stderr, "too large mesh v count %d idx count %d\n",
+                        v_count, i_count);
+                return NULL;
+        }
+
+        m->grid_x = (uint16_t)count_x;
+        m->grid_z = (uint16_t)count_y;
 
 #ifdef DEBUG
         printf("x: %d y: %d\n", count_x, count_y);
@@ -598,27 +627,20 @@ struct mesh* gen_mesh(float x, float y, float d)
                 return NULL;
         }
 
-        if (v_count > 1<<16 || i_count > 1<<16)
-        {
-                printf("too big mesh\n");
-                free(m);
-                return NULL;
-        }
-
         m->vertices = malloc((unsigned long)v_count * sizeof(struct vertex));
         m->indices = malloc((unsigned long)i_count * sizeof(uint16_t));
         m->vertex_count = (uint16_t)v_count;
         m->index_count = (uint16_t)i_count;
 
-        for (uint16_t iy = 0; iy < count_y; iy++)
+        for (int iy = 0; iy < count_y; iy++)
         {
-                for (uint16_t ix = 0; ix < count_x; ix++)
+                for (int ix = 0; ix < count_x; ix++)
                 {
                         v = m->vertices + ip;
 
-                        v->pos.x = ix * d;
+                        v->pos.x = (float)ix * d;
                         v->pos.y = 0.0f;
-                        v->pos.z = iy * d;
+                        v->pos.z = (float)iy * d;
 
                         v->color.x = 0.2f;
                         v->color.y = 0.2f;
@@ -634,19 +656,19 @@ struct mesh* gen_mesh(float x, float y, float d)
 
         ip = 0;
         // Iterate through each quad
-        for (uint16_t iy = 0; iy < count_y - 1; iy++)
+        for (int iy = 0; iy < count_y - 1; iy++)
         {
-                for (uint16_t ix = 0; ix < count_x - 1; ix++)
+                for (int ix = 0; ix < count_x - 1; ix++)
                 {
                         // first triangle
-                        m->indices[ip++] = iy * count_x +ix;
-                        m->indices[ip++] = (iy + 1) * count_x + ix;
-                        m->indices[ip++] = iy * count_x + 1 + ix;
+                        m->indices[ip++] = (uint16_t)(iy * count_x +ix);
+                        m->indices[ip++] = (uint16_t)((iy + 1) * count_x + ix);
+                        m->indices[ip++] = (uint16_t)(iy * count_x + 1 + ix);
 
                         // second triangle
-                        m->indices[ip++] = iy * count_x + 1 + ix;
-                        m->indices[ip++] = (iy + 1) * count_x + ix;
-                        m->indices[ip++] = (iy + 1) * count_x + 1 + ix;
+                        m->indices[ip++] = (uint16_t)(iy * count_x + 1 + ix);
+                        m->indices[ip++] = (uint16_t)((iy + 1) * count_x + ix);
+                        m->indices[ip++] = (uint16_t)((iy + 1) * count_x + 1 + ix);
 
 #ifdef DEBUG
                         printf("%d %d (%d %d %d) (%d %d %d)\n",
@@ -692,9 +714,9 @@ void mesh_heightmap(struct mesh* m, int peaks, float max_height, float radius)
 
         for (int i = 0; i < peaks; i++)
         {
-                peak_x[i] = min_x + range_x * ((float)arc4random() / (float)UINT32_MAX);
-                peak_z[i] = min_z + range_z * ((float)arc4random() / (float)UINT32_MAX);
-                peak_h[i] = max_height * ((float)arc4random() / (float)UINT32_MAX);
+                peak_x[i] = min_x + range_x * rand_u01();
+                peak_z[i] = min_z + range_z * rand_u01();
+                peak_h[i] = max_height * rand_u01();
         }
 
         /* For each vertex, sum contributions from all peaks */

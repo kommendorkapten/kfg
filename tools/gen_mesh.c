@@ -29,8 +29,6 @@ int main(int argc, char* argv[])
         float radius = 10.0f;
         int opt;
 
-        srand((unsigned)time(NULL));
-
         while ((opt = getopt(argc, argv, "w:h:d:o:f:")) != -1)
         {
                 switch (opt)
