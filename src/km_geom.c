@@ -581,10 +581,17 @@ int write_meshes(const char* p, const struct mesh* meshes, int count)
 
 struct mesh* gen_mesh(float x, float y, float d)
 {
-        struct mesh* m = malloc(sizeof(*m));
-        struct vertex* v;
         int count_x = (int)(x / d) + 1;
         int count_y = (int)(y / d) + 1;
+
+        if (count_x > UINT16_MAX || count_y > UINT16_MAX)
+        {
+                fprintf(stderr, "too large mesh (%d x %d)\n",
+                        count_x, count_y);
+                return NULL;
+        }
+        struct mesh* m = malloc(sizeof(*m));
+        struct vertex* v;
         int v_count = count_x * count_y;
         int q_count = (count_x - 1) * (count_y - 1);
         int t_count = q_count * 2;
@@ -596,11 +603,10 @@ struct mesh* gen_mesh(float x, float y, float d)
                 return NULL;
         }
 
-        // check these for size
         if (v_count > UINT16_MAX || i_count > UINT16_MAX)
         {
                 free(m);
-                fprintf(stderr, "to large mesh v count %d idx count %dx\n",
+                fprintf(stderr, "too large mesh v count %d idx count %dx\n",
                         v_count, i_count);
                 return NULL;
         }
@@ -617,13 +623,6 @@ struct mesh* gen_mesh(float x, float y, float d)
         if (d > x || d > y)
         {
                 printf("invalid %f x %f y %f\n", d, x, y);
-                free(m);
-                return NULL;
-        }
-
-        if (v_count > 1<<16 || i_count > 1<<16)
-        {
-                printf("too big mesh\n");
                 free(m);
                 return NULL;
         }
