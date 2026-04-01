@@ -12,7 +12,7 @@
 
 #include <stdlib.h>
 #include "km_plat.h"
-#if __linux
+#if __linux__
 # include <errno.h>
 # include <stdint.h>
 # include <sys/random.h>
