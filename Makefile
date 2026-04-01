@@ -2,7 +2,7 @@ SUBDIRS = lib src tests examples tools
 
 all:
 	@for dir in $(SUBDIRS); do \
-		$(MAKE) -C $$dir all; \
+		$(MAKE) -C $$dir all || exit $$?; \
 	done
 
 lint:

@@ -33,12 +33,12 @@ ifeq ($(UNAME),Darwin)
                -framework CoreGraphics
 endif
 
-CFLAGS    += $(SDL_CFLAGS) -I../src
-LDFLAGS    = $(SDL_LDFLAGS) $(FRAMEWORKS)
+CFLAGS     += $(SDL_CFLAGS) -I../src
+LDFLAGS    += $(SDL_LDFLAGS) $(FRAMEWORKS)
 LINT_FLAGS += $(SDL_CFLAGS)
 
 bounce: bounce.c $(DEPS)
-	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $^ $(LIBS)
+	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
 
 visb: visb.c $(DEPS)
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)

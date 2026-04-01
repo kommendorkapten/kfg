@@ -19,7 +19,6 @@ LINT_FLAGS = --analyze \
 
 #DEBUG=1
 LDFLAGS =
-LIBS =
 
 UNAME := $(shell uname -s)
 
