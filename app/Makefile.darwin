@@ -16,7 +16,6 @@ TARGET = km_app
 DEPS = ../src/objs/km_geom.o \
 	../src/objs/km_math.o \
 	../src/objs/km_phys.o \
-	../src/objs/timing.o \
 	../src/objs/metal_renderer.o \
         ../src/objs/km_input.o \
 	../src/objs/timing.o \
