@@ -5,7 +5,7 @@ all: $(TESTS)
 
 include ../common.mk
 
-CFLAGS += -I../src -I.
+CFLAGS += -I../src
 
 DEPS = ../src/objs/km_geom.o \
         ../src/objs/km_math.o \

@@ -1,4 +1,3 @@
-#include "km_math.h"
 #include "test.h"
 
 #define THR 1e-5f

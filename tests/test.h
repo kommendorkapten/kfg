@@ -4,10 +4,11 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <math.h>
+#include "km_math.h"
 
 struct test_entry {
         const char *name;
-        // fn returns 0 on sucess. Positive number indicates failing
+        // fn returns 0 on success. Positive number indicates failing
         // subtests.
         int (*fn)(void);
 };

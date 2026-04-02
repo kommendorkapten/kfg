@@ -1,5 +1,4 @@
 #include "km_phys.h"
-#include "km_math.h"
 #include "km_geom.h"
 #include "test.h"
 
@@ -434,7 +433,8 @@ static int test_apex_no_steady_state(void)
         m.indices[3] = 1; m.indices[4] = 2; m.indices[5] = 3;
 
         struct world wo;
-        default_world(&wo, 60);
+        int freq = 60;
+        default_world(&wo, freq);
         wo.surface_count = 1;
         wo.surfaces = &m;
 
@@ -448,7 +448,8 @@ static int test_apex_no_steady_state(void)
         o.static_mu = 0.15f;
         o.dynamic_mu = 0.1f;
 
-        int max = 60 * 60;
+        // run for 1 min
+        int max = 60 * freq;
         int ret = 0;
 
         for (int step = 0; step < max; step++)
