@@ -1,59 +1,67 @@
-#include <stdio.h>
-#include <math.h>
 #include <stdlib.h>
 
 #include "km_phys.h"
 #include "km_geom.h"
+#include "test.h"
 
 #define NUM_OBJS 1
 
-int free_fall(int, int);
-int with_drag(int, int, float);
-int upwards(int);
-int bounce(int);
-int test_drag(void);
-int test_coll(void);
+static int free_fall(int, int);
+static int with_drag(int, int, float);
+static int upwards(int);
+static int bounce(int);
+static int test_drag(void);
+static int test_coll(void);
 
-int main(void)
+static int test_free_fall(void)
 {
         int fail = 0;
 
-        // Only run shorter simulations. The accumulated error when using
-        // float builds up over time (that is, the number of steps).
-        // 1 minute, 60hz
         fail = fail || free_fall(60, 60);
-        // 1 minute, 100hz
         fail = fail || free_fall(60, 100);
-        // 1 hour, 60hz
         fail = fail || free_fall(3600, 60);
-        // 1 hour, 100hz
         fail = fail || free_fall(3600, 100);
-        // 2 hours, 60hz
         fail = fail || free_fall(7200, 60);
-        // 2 hours at 100 hz is too much, the error rate gets close to 0.5%
 
-        // Run with drag force (expected values computed numerically)
+        return fail;
+}
+
+static int test_with_drag(void)
+{
+        int fail = 0;
+
         fail = fail || with_drag(5, 60, 45.251652f);
         fail = fail || with_drag(5, 100, 45.251652f);
         fail = fail || with_drag(10, 60, 98.561859f);
         fail = fail || with_drag(10, 100, 98.561859f);
 
-        fail = fail || upwards(60);
-        fail = fail || upwards(100);
-        fail = fail || bounce(60);
-        fail = fail || test_drag();
-        fail = fail || test_coll();
-
-        if (fail)
-        {
-                printf("test failed\n");
-        }
-        else
-        {
-                printf("test passed\n");
-        }
         return fail;
 }
+
+static int test_upwards(void)
+{
+        int fail = 0;
+
+        fail = fail || upwards(60);
+        fail = fail || upwards(100);
+
+        return fail;
+}
+
+static int test_bounce(void)
+{
+        return bounce(60);
+}
+
+static struct test_entry tests[] = {
+        {"free fall (no drag)",   test_free_fall},
+        {"free fall (with drag)", test_with_drag},
+        {"upwards launch",        test_upwards},
+        {"bounce (energy check)", test_bounce},
+        {"drag force isolation",  test_drag},
+        {"collision integration", test_coll},
+};
+RUN_TESTS(tests)
 
 /*
  * Test pure free fall (no drag) using Verlet
@@ -63,7 +71,7 @@ int main(void)
  * Tolerance scales with simulated duration
  * (0.3% per hour).
  */
-int free_fall(int duration, int freq)
+static int free_fall(int duration, int freq)
 {
         struct world w;
         struct object o = {0};
@@ -128,7 +136,7 @@ int free_fall(int duration, int freq)
  * and that the final position matches a
  * numerically precomputed reference value.
  */
-int with_drag(int duration, int freq, float exp_p)
+static int with_drag(int duration, int freq, float exp_p)
 {
         struct world w;
         struct object o = {0};
@@ -189,7 +197,7 @@ int with_drag(int duration, int freq, float exp_p)
  * as drag dissipates energy on both the
  * ascent and descent.
  */
-int upwards(int freq)
+static int upwards(int freq)
 {
         struct world w;
         struct object o = {0};
@@ -249,7 +257,7 @@ int upwards(int freq)
  * is non-positive, catching energy-injection
  * bugs in the integrator.
  */
-int bounce(int freq)
+static int bounce(int freq)
 {
         struct world w;
         struct object o = {0};
@@ -315,7 +323,7 @@ int bounce(int freq)
  * matches the analytical value and opposes
  * the velocity direction.
  */
-int test_drag(void)
+static int test_drag(void)
 {
         struct world w;
         struct object o = {0};
@@ -441,7 +449,7 @@ int test_drag(void)
         return ret;
 }
 
-int test_coll(void)
+static int test_coll(void)
 {
         struct world w;
         struct mesh m;

@@ -1,53 +1,18 @@
-#include <stdio.h>
-#include <math.h>
-
-#include "km_math.h"
+#include "test.h"
 
 #define THR 1e-5f
 
-static int vec3_approx(struct vec3 a, struct vec3 b, float thr)
-{
-        return fabsf(a.x - b.x) < thr &&
-               fabsf(a.y - b.y) < thr &&
-               fabsf(a.z - b.z) < thr;
-}
-
-int test_vec3_add(void);
-int test_vec3_sub(void);
-int test_vec3_scalarm(void);
-int test_vec3_norm(void);
-int test_vec3_dot(void);
-int test_vec3_cross(void);
-int test_km_rsqrt(void);
-int test_vec3_iszero(void);
-
-int main(void)
-{
-        int fail = 0;
-
-        fail = fail || test_vec3_add();
-        fail = fail || test_vec3_sub();
-        fail = fail || test_vec3_scalarm();
-        fail = fail || test_vec3_norm();
-        fail = fail || test_vec3_dot();
-        fail = fail || test_vec3_cross();
-        fail = fail || test_km_rsqrt();
-        fail = fail || test_vec3_iszero();
-
-        if (fail)
-        {
-                printf("test failed\n");
-        }
-        else
-        {
-                printf("test successful\n");
-        }
-
-        return fail;
-}
+static int test_vec3_add(void);
+static int test_vec3_sub(void);
+static int test_vec3_scalarm(void);
+static int test_vec3_norm(void);
+static int test_vec3_dot(void);
+static int test_vec3_cross(void);
+static int test_km_rsqrt(void);
+static int test_vec3_iszero(void);
 
 // Test vec3_add with several vector combinations.
-int test_vec3_add(void)
+static int test_vec3_add(void)
 {
         int ret = 0;
 
@@ -117,7 +82,7 @@ int test_vec3_add(void)
 }
 
 // Test vec3_sub with several vector combinations.
-int test_vec3_sub(void)
+static int test_vec3_sub(void)
 {
         int ret = 0;
 
@@ -188,7 +153,7 @@ int test_vec3_sub(void)
 
 // Test vec3_scalarm with positive, negative and
 // zero scalars.
-int test_vec3_scalarm(void)
+static int test_vec3_scalarm(void)
 {
         int ret = 0;
 
@@ -266,7 +231,7 @@ int test_vec3_scalarm(void)
 
 // Test vec3_norm produces a unit-length vector
 // in the same direction.
-int test_vec3_norm(void)
+static int test_vec3_norm(void)
 {
         int ret = 0;
 
@@ -317,7 +282,7 @@ int test_vec3_norm(void)
 
 // Test vec3_dot for orthogonal, parallel and
 // anti-parallel vectors.
-int test_vec3_dot(void)
+static int test_vec3_dot(void)
 {
         int ret = 0;
 
@@ -413,7 +378,7 @@ int test_vec3_dot(void)
  * properties: anti-commutativity, orthogonality
  * to both inputs, and right-hand rule.
  */
-int test_vec3_cross(void)
+static int test_vec3_cross(void)
 {
         int ret = 0;
 
@@ -523,7 +488,7 @@ int test_vec3_cross(void)
 // Test km_rsqrt against 1/sqrt(x) for several
 // values. The fast inverse sqrt has limited
 // precision so use a looser threshold.
-int test_km_rsqrt(void)
+static int test_km_rsqrt(void)
 {
         int ret = 0;
         // km_rsqrt does one NR step, ~1% accuracy
@@ -556,7 +521,7 @@ int test_km_rsqrt(void)
 
 // Test vec3_iszero for zero, near-zero and
 // non-zero vectors.
-int test_vec3_iszero(void)
+static int test_vec3_iszero(void)
 {
         int ret = 0;
 
@@ -622,3 +587,15 @@ int test_vec3_iszero(void)
 
         return ret;
 }
+
+static struct test_entry tests[] = {
+        {"vec3_add",     test_vec3_add},
+        {"vec3_sub",     test_vec3_sub},
+        {"vec3_scalarm", test_vec3_scalarm},
+        {"vec3_norm",    test_vec3_norm},
+        {"vec3_dot",     test_vec3_dot},
+        {"vec3_cross",   test_vec3_cross},
+        {"km_rsqrt",     test_km_rsqrt},
+        {"vec3_iszero",  test_vec3_iszero},
+};
+RUN_TESTS(tests)
