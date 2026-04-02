@@ -184,6 +184,7 @@ static int test_collide_moving_away(void)
         struct vec3 n = tri_normal();
         struct object o = {0};
         struct mesh m = {0};
+        int ret = 0;
 
         m.restitution = 1.0f;
         o.restitution = 1.0f;
@@ -196,7 +197,27 @@ static int test_collide_moving_away(void)
         float vn = vec3_dot(n, o.p.v);
         collide_object(&m, &o, n, vn);
 
-        return 0;
+        // collide_object returns early, velocity
+        // should be unaffected
+        if (o.p.v.x != 1.0f)
+        {
+                printf("x velocity modified\n");
+                ret = 1;
+        }
+
+        if (o.p.v.y != 1.0f)
+        {
+                printf("y velocity modified\n");
+                ret = 1;
+        }
+
+        if (o.p.v.z != 1.0f)
+        {
+                printf("z velocity modified\n");
+                ret = 1;
+        }
+
+        return ret;
 }
 
 static int test_collide_half_restitution(void)

@@ -447,6 +447,8 @@ static int test_apex_no_steady_state(void)
         o.restitution = 0.9f;
         o.static_mu = 0.15f;
         o.dynamic_mu = 0.1f;
+        // for this test to work, the initial acceleration should
+        // be set to 0
 
         // run for 1 min
         int max = 60 * freq;
@@ -476,6 +478,8 @@ static int test_apex_no_steady_state(void)
                 printf("wrong contact mesh\n");
                 ret = 1;
         }
+
+        mesh_free(&m);
 
         return ret;
 }
