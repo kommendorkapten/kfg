@@ -1,8 +1,11 @@
-all: free_fall geom test_math test_friction test_phys
+TESTS = free_fall geom test_math test_friction test_phys
+RUN_TESTS = free_fall geom test_math test_phys test_friction
+
+all: $(TESTS)
 
 include ../common.mk
 
-CFLAGS += -I../src
+CFLAGS += -I../src -I.
 
 DEPS = ../src/objs/km_geom.o \
         ../src/objs/km_math.o \
@@ -11,27 +14,17 @@ DEPS = ../src/objs/km_geom.o \
 	../src/objs/km_plat.o \
         ../lib/objs/cJSON.o
 
-free_fall: free_fall.c $(DEPS)
-	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
+%: %.c $(DEPS) test.h
+	$(CC) $(CFLAGS) -o $@ $< $(DEPS) $(LDFLAGS)
 
-geom: geom.c $(DEPS)
-	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
-
-test_math: test_math.c $(DEPS)
-	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
-
-test_friction: test_friction.c $(DEPS)
-	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
-
-test_phys: test_phys.c $(DEPS)
-	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
-
-test: free_fall geom test_math test_friction test_phys
-	./free_fall
-	./geom
-	./test_math
-	./test_phys
-#	./test_friction
+test: $(RUN_TESTS)
+	@fail=0; \
+	for t in $(RUN_TESTS); do \
+		echo "=== $$t ==="; \
+		./$$t || fail=1; \
+		echo; \
+	done; \
+	exit $$fail
 
 clean:
-	rm -rf free_fall geom test_math test_friction test_phys objs/*
+	rm -rf $(TESTS) objs/*

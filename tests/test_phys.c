@@ -1,25 +1,17 @@
-#include <stdio.h>
-#include <math.h>
-
 #include "km_phys.h"
 #include "km_math.h"
 #include "km_geom.h"
+#include "test.h"
 
 #define THR 1e-4f
 
-static int vec3_approx(struct vec3 a, struct vec3 b, float thr)
-{
-        return fabsf(a.x - b.x) < thr &&
-               fabsf(a.y - b.y) < thr &&
-               fabsf(a.z - b.z) < thr;
-}
+static int test_drag_force(void);
+static int test_friction_force_dyn(void);
+static int test_friction_force_stat(void);
+static int test_friction_force_coulomb(void);
+static int test_apex_no_steady_state(void);
 
-static int float_approx(float a, float b, float thr)
-{
-        return fabsf(a - b) < thr;
-}
-
-int test_drag_force(void)
+static int test_drag_force(void)
 {
         int failures = 0;
 
@@ -89,7 +81,7 @@ int test_drag_force(void)
         return failures;
 }
 
-int test_friction_force_dyn(void)
+static int test_friction_force_dyn(void)
 {
         int failures = 0;
 
@@ -153,7 +145,7 @@ int test_friction_force_dyn(void)
         return failures;
 }
 
-int test_friction_force_stat(void)
+static int test_friction_force_stat(void)
 {
         int failures = 0;
 
@@ -217,7 +209,7 @@ int test_friction_force_stat(void)
         return failures;
 }
 
-int test_friction_force_coulomb(void)
+static int test_friction_force_coulomb(void)
 {
         int failures = 0;
 
@@ -414,20 +406,84 @@ int test_friction_force_coulomb(void)
         return failures;
 }
 
-int main(void)
+static int test_apex_no_steady_state(void)
 {
-        int total_failures = 0;
+        // Bounce an object, verify that when the object bounces up
+        // and reaches the apex, it does not reach steady state.
+        // Steady state should be reached when the object is resting.
 
-        total_failures += test_drag_force();
-        total_failures += test_friction_force_dyn();
-        total_failures += test_friction_force_stat();
-        total_failures += test_friction_force_coulomb();
+        // Init plane
+        struct mesh m = {0};
+        m.vertex_count = 4;
+        m.vertices = malloc(m.vertex_count * sizeof(struct vertex));
+        m.index_count = 6;
+        m.indices = malloc(m.index_count * sizeof(uint16_t));
+        m.restitution = 0.7f;
+        m.static_mu = 0.15f;
+        m.dynamic_mu = 0.1f;
 
-        if (total_failures == 0) {
-                printf("All physics tests passed!\n");
-        } else {
-                printf("%d tests failed.\n", total_failures);
+        float w = 4.0f;
+        float h = 4.0f;
+
+        m.vertices[0] = (struct vertex){ .pos = { .a = {-w,  0, -h} }, .normal = { .a = { 0,  1,  0} } };
+        m.vertices[1] = (struct vertex){ .pos = { .a = {-w,  0,  h} }, .normal = { .a = { 0,  1,  0} } };
+        m.vertices[2] = (struct vertex){ .pos = { .a = { w,  0,  h} }, .normal = { .a = { 0,  1,  0} } };
+        m.vertices[3] = (struct vertex){ .pos = { .a = { w,  0, -h} }, .normal = { .a = { 0,  1,  0} } };
+
+        m.indices[0] = 0; m.indices[1] = 1; m.indices[2] = 3;
+        m.indices[3] = 1; m.indices[4] = 2; m.indices[5] = 3;
+
+        struct world wo;
+        default_world(&wo, 60);
+        wo.surface_count = 1;
+        wo.surfaces = &m;
+
+        // init object
+        struct object o = {0};
+        o.p.p.y = 3.0f;
+        object_set_m(&o, 1.0f);
+        o.area = 0.3f;
+        o.drag_c = 0.47f;
+        o.restitution = 0.9f;
+        o.static_mu = 0.15f;
+        o.dynamic_mu = 0.1f;
+
+        int max = 60 * 60;
+        int ret = 0;
+
+        for (int step = 0; step < max; step++)
+        {
+                update_object(step, &wo, &o);
         }
 
-        return total_failures;
+        if (!o.steady_state)
+        {
+                printf("object never reached steady state\n");
+                ret = 1;
+        }
+
+        // Object should be resting at the surface now.
+        if (o.p.p.y > 0.01)
+        {
+                // Object not at expected position
+                printf("object not at expected y pos: %f\n", o.p.p.y);
+                ret = 1;
+        }
+
+        if (o.contact_mesh != &m)
+        {
+                printf("wrong contact mesh\n");
+                ret = 1;
+        }
+
+        return ret;
 }
+
+static struct test_entry tests[] = {
+        {"drag_force",            test_drag_force},
+        {"friction_force_dyn",    test_friction_force_dyn},
+        {"friction_force_stat",   test_friction_force_stat},
+        {"friction_force_coulomb", test_friction_force_coulomb},
+        {"apex_no_steady_state", test_apex_no_steady_state},
+};
+RUN_TESTS(tests)

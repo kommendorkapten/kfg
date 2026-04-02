@@ -146,14 +146,13 @@ void update_object(int step, const struct world* w, struct object* o)
                 }
 
                 remaining -= toi.t * remaining;
+        }
 
-                float vabs = vec3_dot(o->p.v, o->p.v);
-                // is the object at rest?
-                if (vabs < w->ss_thr)
-                {
-                        o->steady_state = 1;
-                        break;
-                }
+        float vabs = vec3_dot(o->p.v, o->p.v);
+        // is the object at rest?
+        if (vabs < w->ss_thr && o->contact_mesh)
+        {
+                o->steady_state = 1;
         }
 }
 
