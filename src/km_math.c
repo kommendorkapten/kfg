@@ -111,9 +111,3 @@ int vec3_iszero(struct vec3 v)
 
         return 0;
 }
-
-void print_vec3(struct vec3 v)
-{
-        printf("x: %f y: %f z: %f\n",
-               v.x, v.y, v.z);
-}
