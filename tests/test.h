@@ -6,6 +6,8 @@
 #include <math.h>
 #include "km_math.h"
 
+#define F_THR 0.0001f
+
 struct test_entry {
         const char *name;
         // fn returns 0 on success. Positive number indicates failing
@@ -42,5 +44,13 @@ int main(void)                                                    \
         printf("\n%d/%d passed\n", n - fail, n);                  \
         return fail ? 1 : 0;                                      \
 }
+
+#define ASSERT_IE(a, b) do {if((long)(a) != (long)(b)) {           \
+                        printf("Assertion error, found %ld, expected %ld: %s+%d\n", (long)(b), (long)(a), __FILE__, __LINE__); \
+                        return 1;}} while (0)
+
+#define ASSERT_FE(a, b) do {if(!float_approx((a), (b), F_THR)) {      \
+                        printf("Assertion error, found %f, expected %f: %s+%d\n", (b), (a), __FILE__, __LINE__); \
+                        return 1;}} while (0)
 
 #endif /* TEST_H */

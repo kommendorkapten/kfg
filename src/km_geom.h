@@ -16,6 +16,8 @@
 #include <stdint.h>
 #include "km_math.h"
 
+#define MAX_CONTACT_DIST 0.002f
+
 struct particle;
 
 struct vertex
@@ -34,7 +36,8 @@ struct vertex
 struct mesh
 {
         struct vertex* vertices;
-        uint16_t* indices;
+        // three per triangle, indexed in the same way as indices
+        struct vec3* inward_normals;
         float restitution;
         // static friction coefficient
         float static_mu;
@@ -42,6 +45,9 @@ struct mesh
         float dynamic_mu;
         uint16_t vertex_count;
         uint16_t index_count;
+        // Indices to the triangles, in CCW
+        // the vertices are i * 3 + 0,1,2
+        uint16_t* indices;
         // If the mesh is rectangle, these are the number of vertices
         // in each direction.
         uint16_t grid_x;
@@ -109,6 +115,17 @@ int compute_toi(struct collision* t,
                 int mc);
 
 /**
+ * Test if a position is on or just above the mesh.
+ * This iterate through all triangles and performs a check
+ * for each triangle if the point is on or just above the
+ * surface.
+ * @param m the mesh to test against
+ * @param p the point
+ * @return 1 is on or just above the mesh, otherwise 0
+ */
+int point_on_mesh(struct mesh* m, struct vec3 p);
+
+/**
  * Read the provided json file, and return an array of meshes.
  * @param p the path to the JSON file to read.
  * @param count the number of meshes read and returned
@@ -125,14 +142,49 @@ struct mesh* load_meshes(const char* p, int* count);
  */
 int write_meshes(const char* p, const struct mesh* meshes, int count);
 
+/**
+ * Generate a rectangular mesh with equidistant vertices.
+ * The mesh is rooted at (0, 0, 0) and constructed along the x and z axis
+ * v0  v1 v2
+ *  *--*--*
+ *  | /| /|
+ *  |/ |/ |
+ *  *--*--*
+ * v3  v4 v5
+ * etc
+ * @param x the width of the mesh
+ * @param y the depth of the mesh
+ * @param d axies aligned distance between each vertex
+ * @return a mesh or NULL
+ */
 struct mesh* gen_mesh(float x, float y, float d);
 
+/**
+ * Recreate the normal for each vertex by iterating over all triangles
+ * and adding the surface normal to each vertex.
+ * @param m the mesh to create normals for
+ * @return void
+ */
 void mesh_normalize(struct mesh* m);
 
-void mesh_translate(struct mesh* m, struct vec3* v);
+/**
+ * Translate the mesh by the provided vector
+ * @param m the mesh to translate
+ * @param v the offset
+ * @return void
+ */
+void mesh_translate(struct mesh* m, struct vec3 v);
+
+/**
+ * Generate inward pointing normals for each edge for each triangle.
+ * @param m the mesh to update with inward pointing normals
+ * @return void
+ */
+void mesh_inward_normalize(struct mesh* m);
 
 /**
  * Generate a heightmap on a mesh using scattered peaks with falloff.
+ * Normals are recreated once the height map is done.
  * @param m the mesh to apply heights to
  * @param peaks the number of random peaks to generate
  * @param max_height maximum height of any single peak

@@ -9,30 +9,26 @@ static int test_sliding_friction(void);
 static int test_sliding_friction(void)
 {
         struct world w;
-        struct mesh m;
+        struct mesh* m;
         struct object o = {0};
         int ret = 0;
         int freq = 1000; // Using a high frequency to minimize integration error over the steps
         float v0 = 5.0f;
 
         default_world(&w, freq);
-        w.surface_count = 1;
-        w.surfaces = &m;
 
         // A large flat surface at y = 0
-        m.vertex_count = 3;
-        m.vertices = malloc(m.vertex_count * sizeof(struct vertex));
-        m.vertices[0].pos = (struct vec3) { .a = { -10.0f, 0.0f, -10.0f } };
-        m.vertices[1].pos = (struct vec3) { .a = { -10.0f, 0.0f, 100.0f } };
-        m.vertices[2].pos = (struct vec3) { .a = { 100.0f, 0.0f, -10.0f } };
-        m.index_count = 3;
-        m.indices = malloc(m.index_count * sizeof(uint16_t));
-        m.indices[0] = 0;
-        m.indices[1] = 1;
-        m.indices[2] = 2;
-        m.restitution = 0.0f; // Don't bounce
-        m.static_mu = 0.5f;
-        m.dynamic_mu = 0.5f;
+        m = gen_mesh(150.0f, 150.0f, 1.0f);
+        if (!m)
+        {
+                return 1;
+        }
+        mesh_translate(m, (struct vec3){ .a = {-1.0f, 0.0f, -10.f}});
+        m->restitution = 0.0f; // Don't bounce
+        m->static_mu = 0.5f;
+        m->dynamic_mu = 0.5f;
+        w.surfaces = m;
+        w.surface_count = 1;
 
         o.p.v.x = v0;
         o.p.v.y = 0.0f;
@@ -95,8 +91,8 @@ static int test_sliding_friction(void)
         }
 
         // Clean up
-        free(m.vertices);
-        free(m.indices);
+        mesh_free(m);
+        free(m);
 
         return ret;
 }

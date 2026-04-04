@@ -120,10 +120,9 @@ int main(int argc, char* argv[])
                 }
                 m->static_mu = 0.5f;
                 m->dynamic_mu = 0.5f;
-                mesh_translate(m, &sv);
+                mesh_translate(m, sv);
                 mesh_heightmap(m, num_peaks, height, radius);
                 mesh_colorize(m);
-                mesh_normalize(m);
         }
 
         printf("vertices: (%d x %d) %d\n",
@@ -170,10 +169,9 @@ int main(int argc, char* argv[])
                                 return 1;
                         }
 
-                        mesh_translate(m, &sv);
+                        mesh_translate(m, sv);
                         mesh_heightmap(m, num_peaks, height, radius);
                         mesh_colorize(m);
-                        mesh_normalize(m);
 
                         if (renderer->update(renderer,
                                              m, 1, 0) != 0)

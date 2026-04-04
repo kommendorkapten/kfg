@@ -104,7 +104,7 @@ int main(int argc, char *argv[])
         if (scene.w.surfaces)
         {
                 struct vec3 level = (struct vec3){ .a = {0.0f, -1.0f, 0.0f } };
-                mesh_translate(scene.w.surfaces, &level);
+                mesh_translate(scene.w.surfaces, level);
         }
 
         scene.w.waters = load_meshes(water_file, &scene.w.water_count);

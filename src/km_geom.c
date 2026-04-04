@@ -151,10 +151,61 @@ int compute_toi(struct collision* toi,
         return ret;
 }
 
+int point_on_mesh(struct mesh* m, struct vec3 p)
+{
+        for (uint16_t i = 0; i < m->index_count / 3; i++)
+        {
+                struct vertex* v0;
+                struct vertex* v1;
+                struct vertex* v2;
+                struct vec3 e1;
+                struct vec3 e2;
+                struct vec3 n;
+                struct vec3 dv;
+                float d;
+
+                mesh_get_tri(&v0, &v1, &v2, m, i);
+                e1 = vec3_sub(v1->pos, v0->pos);
+                e2 = vec3_sub(v2->pos, v0->pos);
+                n = vec3_norm(vec3_cross(e1, e2));
+
+                dv = vec3_sub(p, m->vertices[m->indices[i*3]].pos);
+                d = vec3_dot(dv, n);
+                if (d > MAX_CONTACT_DIST || d < 0.0f)
+                {
+                        continue;
+                }
+
+                // Check the sign of the dot product against all inward
+                // pointing normals
+                if (vec3_dot(m->inward_normals[i * 3 + 0], dv) < 0.0f)
+                {
+                        continue;
+                }
+                dv = vec3_sub(p, m->vertices[m->indices[i*3 + 1]].pos);
+                if (vec3_dot(m->inward_normals[i * 3 + 1], dv) < 0.0f)
+                {
+                        continue;
+                }
+                dv = vec3_sub(p, m->vertices[m->indices[i*3 + 2]].pos);
+                if (vec3_dot(m->inward_normals[i * 3 + 2], dv) < 0.0f)
+                {
+                        continue;
+                }
+
+                // Point is on or just above
+                return 1;
+        }
+
+        return 0;
+}
+
 void mesh_free(struct mesh* m)
 {
         free(m->vertices);
         free(m->indices);
+        free(m->inward_normals);
+
         memset(m, 0, sizeof(*m));
 }
 
@@ -274,16 +325,6 @@ static struct mesh* parse_mesh(const cJSON* json_mesh)
                         return NULL;
                 }
 
-                cJSON* norm = cJSON_GetObjectItem(v, "normal");
-                if (!cJSON_IsArray(norm) || cJSON_GetArraySize(norm) < 3)
-                {
-                        fprintf(stderr, "vertex %d: 'normal' must be an "
-                                "array with at least 3 elements\n", i);
-                        free(m->vertices);
-                        free(m);
-                        return NULL;
-                }
-
                 cJSON* px = cJSON_GetArrayItem(pos, 0);
                 cJSON* py = cJSON_GetArrayItem(pos, 1);
                 cJSON* pz = cJSON_GetArrayItem(pos, 2);
@@ -297,26 +338,9 @@ static struct mesh* parse_mesh(const cJSON* json_mesh)
                         return NULL;
                 }
 
-                cJSON* nx = cJSON_GetArrayItem(norm, 0);
-                cJSON* ny = cJSON_GetArrayItem(norm, 1);
-                cJSON* nz = cJSON_GetArrayItem(norm, 2);
-                if (!cJSON_IsNumber(nx) || !cJSON_IsNumber(ny) ||
-                    !cJSON_IsNumber(nz))
-                {
-                        fprintf(stderr, "vertex %d: 'normal' elements "
-                                "must be numbers\n", i);
-                        free(m->vertices);
-                        free(m);
-                        return NULL;
-                }
-
                 m->vertices[i].pos.x = (float)px->valuedouble;
                 m->vertices[i].pos.y = (float)py->valuedouble;
                 m->vertices[i].pos.z = (float)pz->valuedouble;
-
-                m->vertices[i].normal.x = (float)nx->valuedouble;
-                m->vertices[i].normal.y = (float)ny->valuedouble;
-                m->vertices[i].normal.z = (float)nz->valuedouble;
 
                 /* color (optional, default: 0.3, 0.6, 0.8, 1.0) */
                 cJSON* col = cJSON_GetObjectItem(v, "color");
@@ -389,6 +413,17 @@ static struct mesh* parse_mesh(const cJSON* json_mesh)
                 }
                 m->indices[i] = (uint16_t)idx->valuedouble;
         }
+
+        m->inward_normals = malloc((size_t)ic * sizeof(struct vec3));
+        if (!m->inward_normals)
+        {
+                free(m->indices);
+                free(m->vertices);
+                free(m);
+                return NULL;
+        }
+        mesh_normalize(m);
+        mesh_inward_normalize(m);
 
         return m;
 }
@@ -538,9 +573,6 @@ int write_meshes(const char* p, const struct mesh* meshes, int count)
                         cJSON* pos = cJSON_CreateFloatArray(v->pos.a, 3);
                         cJSON_AddItemToObject(jv, "position", pos);
 
-                        cJSON* norm = cJSON_CreateFloatArray(v->normal.a, 3);
-                        cJSON_AddItemToObject(jv, "normal", norm);
-
                         cJSON* col = cJSON_CreateFloatArray(v->color.a, 4);
                         cJSON_AddItemToObject(jv, "color", col);
 
@@ -614,12 +646,6 @@ struct mesh* gen_mesh(float x, float y, float d)
         m->grid_x = (uint16_t)count_x;
         m->grid_z = (uint16_t)count_y;
 
-#ifdef DEBUG
-        printf("x: %d y: %d\n", count_x, count_y);
-        printf("num quads %d num vert: %d num tri %d num indi %d\n",
-               q_count, v_count, t_count, i_count);
-#endif
-
         if (d > x || d > y)
         {
                 printf("invalid %f x %f y %f\n", d, x, y);
@@ -627,8 +653,9 @@ struct mesh* gen_mesh(float x, float y, float d)
                 return NULL;
         }
 
-        m->vertices = malloc((unsigned long)v_count * sizeof(struct vertex));
-        m->indices = malloc((unsigned long)i_count * sizeof(uint16_t));
+        m->vertices = malloc((size_t)v_count * sizeof(struct vertex));
+        m->indices = malloc((size_t)i_count * sizeof(uint16_t));
+        m->inward_normals = malloc((size_t)i_count * sizeof(struct vec3));
         m->vertex_count = (uint16_t)v_count;
         m->index_count = (uint16_t)i_count;
 
@@ -682,6 +709,9 @@ struct mesh* gen_mesh(float x, float y, float d)
 #endif
                 }
         }
+
+        mesh_normalize(m);
+        mesh_inward_normalize(m);
 
         return m;
 }
@@ -745,6 +775,9 @@ void mesh_heightmap(struct mesh* m, int peaks, float max_height, float radius)
         free(peak_x);
         free(peak_z);
         free(peak_h);
+
+        mesh_normalize(m);
+        mesh_inward_normalize(m);
 }
 
 void mesh_normalize(struct mesh* m)
@@ -784,11 +817,40 @@ void mesh_normalize(struct mesh* m)
         }
 }
 
-void mesh_translate(struct mesh* m, struct vec3* v)
+void mesh_inward_normalize(struct mesh* m)
+{
+        // Iterate through all triangles,
+        for (uint16_t i = 0; i < m->index_count / 3; i++)
+        {
+                struct vertex* v0;
+                struct vertex* v1;
+                struct vertex* v2;
+                struct vec3 e1;
+                struct vec3 e2;
+                struct vec3 e3;
+                struct vec3 n;
+
+                mesh_get_tri(&v0, &v1, &v2, m, i);
+
+                e1 = vec3_sub(v1->pos, v0->pos);
+                e2 = vec3_sub(v2->pos, v1->pos);
+                e3 = vec3_sub(v0->pos, v2->pos);
+                // Only used to calculate the surface normal
+                n = vec3_sub(v2->pos, v0->pos);
+
+                n = vec3_norm(vec3_cross(e1, n));
+
+                m->inward_normals[i * 3 + 0] = vec3_norm(vec3_cross(n, e1));
+                m->inward_normals[i * 3 + 1] = vec3_norm(vec3_cross(n, e2));
+                m->inward_normals[i * 3 + 2] = vec3_norm(vec3_cross(n, e3));
+        }
+}
+
+void mesh_translate(struct mesh* m, struct vec3 v)
 {
         for (uint16_t i = 0; i < m->vertex_count; i++)
         {
-                m->vertices[i].pos = vec3_add(m->vertices[i].pos, *v);
+                m->vertices[i].pos = vec3_add(m->vertices[i].pos, v);
         }
 }
 
