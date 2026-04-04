@@ -153,11 +153,11 @@ int write_meshes(const char* p, const struct mesh* meshes, int count);
  * v3  v4 v5
  * etc
  * @param x the width of the mesh
- * @param y the depth of the mesh
- * @param d axies aligned distance between each vertex
+ * @param z the depth of the mesh
+ * @param d axis aligned distance between each vertex
  * @return a mesh or NULL
  */
-struct mesh* gen_mesh(float x, float y, float d);
+struct mesh* gen_mesh(float x, float z, float d);
 
 /**
  * Recreate the normal for each vertex by iterating over all triangles

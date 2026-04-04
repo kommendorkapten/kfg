@@ -293,6 +293,17 @@ void init_plane(struct mesh* m, float w, float h, int tilt)
         m->static_mu = 0.15f;
         m->dynamic_mu = 0.1f;
 
+        if (m->vertices == NULL ||
+            m->indices == NULL ||
+            m->inward_normals == NULL)
+        {
+                free(m->vertices);
+                free(m->indices);
+                free(m->inward_normals);
+
+                return;
+        }
+
         w = w / 2.0f;
         h = h / 2.0f;
 
@@ -335,6 +346,18 @@ void init_vert_plane(struct mesh* m, float x)
         m->restitution = 0.7f;
         m->static_mu = 0.15f;
         m->dynamic_mu = 0.1f;
+
+        if (m->vertices == NULL ||
+            m->indices == NULL ||
+            m->inward_normals == NULL)
+        {
+                free(m->vertices);
+                free(m->indices);
+                free(m->inward_normals);
+
+                return;
+        }
+
 
         float w = 5.0f;
         float h = 5.0f;

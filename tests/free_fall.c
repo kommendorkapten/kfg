@@ -514,5 +514,8 @@ static int test_coll(void)
                 }
         }
 
+        mesh_free(m);
+        free(m);
+
         return ret;
 }

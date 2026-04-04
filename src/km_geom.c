@@ -153,7 +153,7 @@ int compute_toi(struct collision* toi,
 
 int point_on_mesh(struct mesh* m, struct vec3 p)
 {
-        for (uint16_t i = 0; i < m->index_count / 3; i++)
+        for (uint32_t i = 0; i < m->index_count / 3; i++)
         {
                 struct vertex* v0;
                 struct vertex* v1;
@@ -388,7 +388,7 @@ static struct mesh* parse_mesh(const cJSON* json_mesh)
         }
 
         int ic = cJSON_GetArraySize(idxs);
-        m->index_count = (uint16_t)ic;
+        m->index_count = (uint32_t)ic;
         m->indices = malloc((unsigned long)ic * sizeof(uint16_t));
         if (!m->indices)
         {
@@ -611,21 +611,21 @@ int write_meshes(const char* p, const struct mesh* meshes, int count)
         return 0;
 }
 
-struct mesh* gen_mesh(float x, float y, float d)
+struct mesh* gen_mesh(float x, float z, float d)
 {
         unsigned int count_x = (unsigned int)(x / d) + 1;
-        unsigned int count_y = (unsigned int)(y / d) + 1;
+        unsigned int count_z = (unsigned int)(z / d) + 1;
 
-        if (count_x > UINT16_MAX || count_y > UINT16_MAX)
+        if (count_x > UINT16_MAX || count_z > UINT16_MAX)
         {
                 fprintf(stderr, "too large mesh (%d x %d)\n",
-                        count_x, count_y);
+                        count_x, count_z);
                 return NULL;
         }
         struct mesh* m = malloc(sizeof(*m));
         struct vertex* v;
-        unsigned int v_count = count_x * count_y;
-        unsigned int q_count = (count_x - 1) * (count_y - 1);
+        unsigned int v_count = count_x * count_z;
+        unsigned int q_count = (count_x - 1) * (count_z - 1);
         unsigned int t_count = q_count * 2;
         unsigned long long i_count = t_count * 3;
         int ip = 0;
@@ -644,11 +644,11 @@ struct mesh* gen_mesh(float x, float y, float d)
         }
 
         m->grid_x = (uint16_t)count_x;
-        m->grid_z = (uint16_t)count_y;
+        m->grid_z = (uint16_t)count_z;
 
-        if (d > x || d > y)
+        if (d > x || d > z)
         {
-                printf("invalid %f x %f y %f\n", d, x, y);
+                printf("invalid %f x %f z %f\n", d, x, z);
                 free(m);
                 return NULL;
         }
@@ -659,7 +659,18 @@ struct mesh* gen_mesh(float x, float y, float d)
         m->vertex_count = (uint16_t)v_count;
         m->index_count = (uint32_t)i_count;
 
-        for (unsigned int iy = 0; iy < count_y; iy++)
+        if (m->vertices == NULL ||
+            m->indices == NULL ||
+            m->inward_normals == NULL)
+        {
+                free(m->vertices);
+                free(m->indices);
+                free(m->inward_normals);
+                free(m);
+                return NULL;
+        }
+
+        for (unsigned int iz = 0; iz < count_z; iz++)
         {
                 for (unsigned int ix = 0; ix < count_x; ix++)
                 {
@@ -667,7 +678,7 @@ struct mesh* gen_mesh(float x, float y, float d)
 
                         v->pos.x = (float)ix * d;
                         v->pos.y = 0.0f;
-                        v->pos.z = (float)iy * d;
+                        v->pos.z = (float)iz * d;
 
                         v->color.x = 0.2f;
                         v->color.y = 0.2f;
@@ -683,23 +694,23 @@ struct mesh* gen_mesh(float x, float y, float d)
 
         ip = 0;
         // Iterate through each quad
-        for (unsigned int iy = 0; iy < count_y - 1; iy++)
+        for (unsigned int iz = 0; iz < count_z - 1; iz++)
         {
                 for (unsigned int ix = 0; ix < count_x - 1; ix++)
                 {
                         // first triangle
-                        m->indices[ip++] = (uint16_t)(iy * count_x +ix);
-                        m->indices[ip++] = (uint16_t)((iy + 1) * count_x + ix);
-                        m->indices[ip++] = (uint16_t)(iy * count_x + 1 + ix);
+                        m->indices[ip++] = (uint16_t)(iz * count_x +ix);
+                        m->indices[ip++] = (uint16_t)((iz + 1) * count_x + ix);
+                        m->indices[ip++] = (uint16_t)(iz * count_x + 1 + ix);
 
                         // second triangle
-                        m->indices[ip++] = (uint16_t)(iy * count_x + 1 + ix);
-                        m->indices[ip++] = (uint16_t)((iy + 1) * count_x + ix);
-                        m->indices[ip++] = (uint16_t)((iy + 1) * count_x + 1 + ix);
+                        m->indices[ip++] = (uint16_t)(iz * count_x + 1 + ix);
+                        m->indices[ip++] = (uint16_t)((iz + 1) * count_x + ix);
+                        m->indices[ip++] = (uint16_t)((iz + 1) * count_x + 1 + ix);
 
 #ifdef DEBUG
                         printf("%d %d (%d %d %d) (%d %d %d)\n",
-                               ix, iy,
+                               ix, iz,
                                m->indices[ip-6],
                                m->indices[ip-5],
                                m->indices[ip-4],
@@ -790,7 +801,7 @@ void mesh_normalize(struct mesh* m)
         // Iterate through all triangles, add the normal to each vertex
         // the cross product is proportional to the triangle's area, which
         // makes bigger triangles contribute more to the normal
-        for (uint16_t i = 0; i < m->index_count / 3; i++)
+        for (uint32_t i = 0; i < m->index_count / 3; i++)
         {
                 struct vertex* v0;
                 struct vertex* v1;
@@ -820,7 +831,7 @@ void mesh_normalize(struct mesh* m)
 void mesh_inward_normalize(struct mesh* m)
 {
         // Iterate through all triangles,
-        for (uint16_t i = 0; i < m->index_count / 3; i++)
+        for (uint32_t i = 0; i < m->index_count / 3; i++)
         {
                 struct vertex* v0;
                 struct vertex* v1;

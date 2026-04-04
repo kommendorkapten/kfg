@@ -334,13 +334,13 @@ static int test_gen_mesh_large(void)
         // Each triangle has three indices
         ASSERT_IE(100 * 100 * 2 * 3, m->index_count);
 
-        ASSERT_FE(m->vertices[100].pos.x, 100.0f);
-        ASSERT_FE(m->vertices[100].pos.y, 0.0f);
-        ASSERT_FE(m->vertices[100].pos.z, 0.0f);
+        ASSERT_FE(100.0f, m->vertices[100].pos.x);
+        ASSERT_FE(0.0f, m->vertices[100].pos.y);
+        ASSERT_FE(0.0f, m->vertices[100].pos.z);
 
-        ASSERT_FE(m->vertices[101].pos.x, 0.0f);
-        ASSERT_FE(m->vertices[101].pos.y, 0.0f);
-        ASSERT_FE(m->vertices[101].pos.z, 1.0f);
+        ASSERT_FE(0.0f, m->vertices[101].pos.x);
+        ASSERT_FE(0.0f, m->vertices[101].pos.y);
+        ASSERT_FE(1.0f, m->vertices[101].pos.z);
 
         struct vertex* v0;
         struct vertex* v1;
@@ -352,16 +352,16 @@ static int test_gen_mesh_large(void)
 
         mesh_get_tri(&v0, &v1, &v2, m, 2);
 
-        ASSERT_FE(v1->pos.x, 1.0f);
-        ASSERT_FE(v1->pos.y, 0.0f);
-        ASSERT_FE(v1->pos.z, 1.0f);
+        ASSERT_FE(1.0f, v1->pos.x);
+        ASSERT_FE(0.0f, v1->pos.y);
+        ASSERT_FE(1.0f, v1->pos.z);
 
         e1 = vec3_sub(v1->pos, v0->pos);
         e2 = vec3_sub(v2->pos, v0->pos);
 
-        ASSERT_FE(e1.x, 0.0f);
-        ASSERT_FE(e1.y, 0.0f);
-        ASSERT_FE(e1.z, 1.0f);
+        ASSERT_FE(0.0f, e1.x);
+        ASSERT_FE(0.0f, e1.y);
+        ASSERT_FE(1.0f, e1.z);
 
         n = vec3_cross(e1, e2);
         ASSERT_IE(1, vec3_approx(n, up, F_THR));
