@@ -305,13 +305,13 @@ static int test_gen_mesh(void)
         mesh_normalize(m);
         mesh_inward_normalize(m);
 
-        for (int i = 0; i < m->vertex_count; i++)
+        for (unsigned int i = 0; i < m->vertex_count; i++)
         {
                 ASSERT_FE(1.0f, vec3_dot(m->vertices[i].normal,
                                          m->vertices[i].normal));
         }
 
-        for (int i = 0; i < m->index_count; i++)
+        for (unsigned int i = 0; i < m->index_count; i++)
         {
                 ASSERT_FE(1.0f, vec3_dot(m->inward_normals[i],
                                          m->inward_normals[i]));
@@ -502,13 +502,13 @@ static int test_write_parse_mesh(void)
         }
 
         // Indices
-        for (int i = 0; i < m->index_count; i++)
+        for (unsigned int i = 0; i < m->index_count; i++)
         {
                 ASSERT_IE(m->indices[i], r->indices[i]);
         }
 
         // Normals are recomputed from geometry, verify they match
-        for (int i = 0; i < m->vertex_count; i++)
+        for (unsigned int i = 0; i < m->vertex_count; i++)
         {
                 if (!vec3_approx(m->vertices[i].normal,
                                  r->vertices[i].normal, F_THR))
@@ -519,7 +519,7 @@ static int test_write_parse_mesh(void)
         }
 
         // Inward normals
-        for (int i = 0; i < m->index_count; i++)
+        for (unsigned int i = 0; i < m->index_count; i++)
         {
                 if (!vec3_approx(m->inward_normals[i],
                                  r->inward_normals[i], F_THR))

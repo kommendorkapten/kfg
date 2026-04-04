@@ -44,7 +44,7 @@ struct mesh
         // dynamic friction coefficient
         float dynamic_mu;
         uint16_t vertex_count;
-        uint16_t index_count;
+        uint32_t index_count;
         // Indices to the triangles, in CCW
         // the vertices are i * 3 + 0,1,2
         uint16_t* indices;
@@ -59,7 +59,7 @@ struct collision
         struct vec3 n;
         float t;
         struct mesh* m;
-        uint16_t ti;
+        uint32_t ti;
 };
 
 /**
@@ -82,7 +82,7 @@ void mesh_get_tri(struct vertex** restrict,
                   struct vertex** restrict,
                   struct vertex** restrict,
                   const struct mesh*,
-                  int);
+                  uint32_t);
 
 /**
  * Möller-Trumbore algorithm for particle (ray) triangle intersection

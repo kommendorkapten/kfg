@@ -31,7 +31,7 @@ void mesh_get_tri(struct vertex** restrict v0,
                   struct vertex** restrict v1,
                   struct vertex** restrict v2,
                   const struct mesh* m,
-                  int i)
+                  uint32_t i)
 {
         *v0 = m->vertices + m->indices[i * 3 + 0];
         *v1 = m->vertices + m->indices[i * 3 + 1];
@@ -104,9 +104,9 @@ int compute_toi(struct collision* toi,
         for (int s = 0; s < mesh_count; s++)
         {
                 struct mesh* cm = meshes + s;
-                uint16_t num_tri = cm->index_count / 3;
+                uint32_t num_tri = cm->index_count / 3;
 
-                for (uint16_t ti = 0; ti < num_tri; ti++)
+                for (uint32_t ti = 0; ti < num_tri; ti++)
                 {
                         struct vec3 e1;
                         struct vec3 e2;
@@ -581,7 +581,7 @@ int write_meshes(const char* p, const struct mesh* meshes, int count)
 
                 /* indices */
                 cJSON* jidxs = cJSON_AddArrayToObject(jmesh, "indices");
-                for (int ii = 0; ii < m->index_count; ii++)
+                for (int ii = 0; (uint32_t)ii < m->index_count; ii++)
                 {
                         cJSON_AddItemToArray(jidxs,
                                 cJSON_CreateNumber(m->indices[ii]));
@@ -613,8 +613,8 @@ int write_meshes(const char* p, const struct mesh* meshes, int count)
 
 struct mesh* gen_mesh(float x, float y, float d)
 {
-        int count_x = (int)(x / d) + 1;
-        int count_y = (int)(y / d) + 1;
+        unsigned int count_x = (unsigned int)(x / d) + 1;
+        unsigned int count_y = (unsigned int)(y / d) + 1;
 
         if (count_x > UINT16_MAX || count_y > UINT16_MAX)
         {
@@ -624,10 +624,10 @@ struct mesh* gen_mesh(float x, float y, float d)
         }
         struct mesh* m = malloc(sizeof(*m));
         struct vertex* v;
-        int v_count = count_x * count_y;
-        int q_count = (count_x - 1) * (count_y - 1);
-        int t_count = q_count * 2;
-        int i_count = t_count * 3;
+        unsigned int v_count = count_x * count_y;
+        unsigned int q_count = (count_x - 1) * (count_y - 1);
+        unsigned int t_count = q_count * 2;
+        unsigned long long i_count = t_count * 3;
         int ip = 0;
 
         if (!m)
@@ -635,10 +635,10 @@ struct mesh* gen_mesh(float x, float y, float d)
                 return NULL;
         }
 
-        if (v_count > UINT16_MAX || i_count > UINT16_MAX)
+        if (v_count > UINT16_MAX || i_count > UINT32_MAX)
         {
                 free(m);
-                fprintf(stderr, "too large mesh v count %d idx count %d\n",
+                fprintf(stderr, "too large mesh v count %u idx count %llu\n",
                         v_count, i_count);
                 return NULL;
         }
@@ -657,11 +657,11 @@ struct mesh* gen_mesh(float x, float y, float d)
         m->indices = malloc((size_t)i_count * sizeof(uint16_t));
         m->inward_normals = malloc((size_t)i_count * sizeof(struct vec3));
         m->vertex_count = (uint16_t)v_count;
-        m->index_count = (uint16_t)i_count;
+        m->index_count = (uint32_t)i_count;
 
-        for (int iy = 0; iy < count_y; iy++)
+        for (unsigned int iy = 0; iy < count_y; iy++)
         {
-                for (int ix = 0; ix < count_x; ix++)
+                for (unsigned int ix = 0; ix < count_x; ix++)
                 {
                         v = m->vertices + ip;
 
@@ -683,9 +683,9 @@ struct mesh* gen_mesh(float x, float y, float d)
 
         ip = 0;
         // Iterate through each quad
-        for (int iy = 0; iy < count_y - 1; iy++)
+        for (unsigned int iy = 0; iy < count_y - 1; iy++)
         {
-                for (int ix = 0; ix < count_x - 1; ix++)
+                for (unsigned int ix = 0; ix < count_x - 1; ix++)
                 {
                         // first triangle
                         m->indices[ip++] = (uint16_t)(iy * count_x +ix);
