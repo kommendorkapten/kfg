@@ -618,7 +618,7 @@ struct mesh* gen_mesh(float x, float z, float d)
 
         if (count_x > UINT16_MAX || count_z > UINT16_MAX)
         {
-                fprintf(stderr, "too large mesh (%d x %d)\n",
+                fprintf(stderr, "too large mesh (%u x %u)\n",
                         count_x, count_z);
                 return NULL;
         }
