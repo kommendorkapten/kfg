@@ -422,7 +422,7 @@ static int test_apex_no_steady_state(void)
         int freq = 60;
         default_world(&wo, freq);
         wo.surface_count = 1;
-        wo.surfaces = m;
+        wo.surfaces = &m;
 
         // init object
         struct object o = {0};

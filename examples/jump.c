@@ -13,7 +13,7 @@
 #include "timing.h"
 #include "common.h"
 
-int main(int argc, char* argv[])
+int main(void)
 {
         struct scene scene = {0};
         struct km_window window = {0};
@@ -21,24 +21,8 @@ int main(int argc, char* argv[])
         struct renderer  *renderer = NULL;
         Uint64 now, last;
         int fullscreen = 0;
-        int tilt = 0;
-        int opt;
         float margin = 0.002f; // margin for vsync during sleep
         int slowmo = 1;
-
-        while ((opt = getopt(argc, argv, "t")) != -1)
-        {
-                switch (opt)
-                {
-                case 't':
-                        tilt = 1;
-                        break;
-                default:
-                        fprintf(stderr, "usage: %s [-w width] [-h height] [-d delta] [-o output] [-f file]\n",
-                                argv[0]);
-                        return 1;
-                }
-        }
 
         input.width = KM_DEFAULT_WIDTH;
         input.height = KM_DEFAULT_HEIGHT;
@@ -73,8 +57,8 @@ int main(int argc, char* argv[])
         }
 
         // Setup camera
-        scene.cam.pos = (struct vec3){ .a = { -5.0f, 1.0f, 15.0f } };
-        scene.cam.center = (struct vec3){ .a = { -5.0f, 0.0f, 0.0f } };
+        scene.cam.pos = (struct vec3){ .a = { 10.0f, 10.0f, 25.0f } };
+        scene.cam.center = (struct vec3){ .a = { -0.0f, 0.0f, 0.0f } };
         scene.cam.up = (struct vec3){ .a = { 0.0f, 1.0f, 0.0f } };
 
         struct vec3 cd = vec3_sub(scene.cam.pos, scene.cam.center);
@@ -82,29 +66,24 @@ int main(int argc, char* argv[])
         input.phi = acosf(cd.y / r);
         input.theta = atan2f(cd.z, cd.x);
 
-        struct mesh plane0;
-        struct mesh plane1;
-        struct mesh vplane;
+        struct mesh* m = gen_mesh(100.0f, 100.0f, 1.0f);
+        mesh_translate(m, (struct vec3){ .a = {-50.0f, 0.0f, -50.0f} });
+        mesh_colorize(m);
+        struct mesh wall;
 
-        init_plane(&plane0, 10.0f, 10.0f, tilt);
-        init_plane(&plane1, 20.0f, 10.0f, 0);
-        for (int i = 0; i < plane1.vertex_count; i++)
-        {
-                plane1.vertices[i].pos.x -= 5.0f;
-                plane1.vertices[i].pos.y = -2.0f;
-        }
-        init_vert_plane(&vplane, -10.0f);
+        init_vert_plane(&wall, 0.0f);
 
-        world_add_mesh(&scene.w, &plane0);
-        world_add_mesh(&scene.w, &plane1);
-        world_add_mesh(&scene.w, &vplane);
+        world_add_mesh(&scene.w, m);
+        world_add_mesh(&scene.w, &wall);
 
         struct entity e;
 
         memset(&e, 0, sizeof(struct entity));
         e.surfaces = malloc(1 * sizeof(struct mesh));
         e.surface_count = 1;
-        e.o.p.p.y = 3.0f;
+        e.o.p.p.x = -20.0f;
+        e.o.p.p.y = 0.001f;
+        e.o.p.v.x = 14.0f;
         e.o.m = 1.0f;
         e.o.m_inv = 1.0f;
         e.o.area = 0.3f;
@@ -190,7 +169,6 @@ int main(int argc, char* argv[])
         renderer->cleanup(renderer);
         free(renderer);
 
-        scene_free(&scene);
         km_window_destroy(&window);
         SDL_Quit();
 

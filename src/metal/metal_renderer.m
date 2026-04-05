@@ -218,7 +218,7 @@ static int metal_init(struct renderer *r, SDL_Window *window, int w, int h)
 /* Upload meshes to GPU                                                */
 /* ------------------------------------------------------------------ */
 
-static GpuMesh *upload_one_mesh(id<MTLDevice> device, const struct mesh *m)
+static GpuMesh *upload_one_mesh(id<MTLDevice> device, struct mesh* m)
 {
         GpuMesh *gm = [[GpuMesh alloc] init];
 
@@ -238,9 +238,11 @@ static GpuMesh *upload_one_mesh(id<MTLDevice> device, const struct mesh *m)
         return gm;
 }
 
-static int metal_upload(struct renderer *r,
-                        const struct mesh *static_meshes, int static_count,
-                        const struct entity *entities, int entity_count)
+static int metal_upload(struct renderer* r,
+                        struct mesh* const* static_meshes,
+                        unsigned int static_count,
+                        struct entity* const* entities,
+                        unsigned int entity_count)
 {
         MetalContext *ctx = (__bridge MetalContext *)r->ctx;
 
@@ -249,16 +251,16 @@ static int metal_upload(struct renderer *r,
         [ctx.entityGpuMeshes removeAllObjects];
 
         /* Upload static meshes (world surfaces) */
-        for (int i = 0; i < static_count; i++) {
-                GpuMesh *gm = upload_one_mesh(ctx.device, &static_meshes[i]);
+        for (unsigned int i = 0; i < static_count; i++) {
+                GpuMesh *gm = upload_one_mesh(ctx.device, static_meshes[i]);
                 [ctx.staticGpuMeshes addObject:gm];
         }
 
         /* Upload entity meshes (one group per entity) */
-        for (int i = 0; i < entity_count; i++) {
-                const struct entity *e = &entities[i];
-                NSMutableArray<GpuMesh *> *group = [[NSMutableArray alloc] init];
-                for (int j = 0; j < e->surface_count; j++) {
+        for (unsigned int i = 0; i < entity_count; i++) {
+                const struct entity* e = entities[i];
+                NSMutableArray<GpuMesh*>* group = [[NSMutableArray alloc] init];
+                for (unsigned int j = 0; j < e->surface_count; j++) {
                         GpuMesh *gm = upload_one_mesh(ctx.device,
                                                       &e->surfaces[j]);
                         [group addObject:gm];
@@ -275,30 +277,32 @@ static int metal_upload(struct renderer *r,
 /* Update dynamic meshes                                               */
 /* ------------------------------------------------------------------ */
 
-static int metal_update(struct renderer *r,
-                        const struct mesh *meshes, int count, int create)
+static int metal_update(struct renderer* r,
+                        struct mesh* const* meshes,
+                        unsigned int count,
+                        int create)
 {
         MetalContext *ctx = (__bridge MetalContext *)r->ctx;
 
         if (create)
         {
                 [ctx.dynamicGpuMeshes removeAllObjects];
-                for (int i = 0; i < count; i++)
+                for (unsigned int i = 0; i < count; i++)
                 {
-                        GpuMesh *gm = upload_one_mesh(ctx.device, &meshes[i]);
+                        GpuMesh *gm = upload_one_mesh(ctx.device, meshes[i]);
                         [ctx.dynamicGpuMeshes addObject:gm];
                 }
                 fprintf(stdout, "Created %d dynamic GPU mesh(es)\n", count);
         }
         else
         {
-                for (int i = 0; i < count; i++)
+                for (unsigned int i = 0; i < count; i++)
                 {
                         GpuMesh *gm = ctx.dynamicGpuMeshes[(NSUInteger)i];
-                        NSUInteger vsize = meshes[i].vertex_count
+                        NSUInteger vsize = meshes[i]->vertex_count
                                 * sizeof(struct vertex);
                         memcpy(gm.vertexBuffer.contents,
-                               meshes[i].vertices, vsize);
+                               meshes[i]->vertices, vsize);
                 }
         }
 
@@ -310,8 +314,8 @@ static int metal_update(struct renderer *r,
 /* ------------------------------------------------------------------ */
 
 static void draw_mesh(id<MTLRenderCommandEncoder> enc,
-                      GpuMesh *gm,
-                      const struct uniforms *u)
+                      GpuMesh* gm,
+                      const struct uniforms* u)
 {
         [enc setVertexBuffer:gm.vertexBuffer offset:0 atIndex:0];
         [enc setVertexBytes:u length:sizeof(*u) atIndex:1];
@@ -324,7 +328,7 @@ static void draw_mesh(id<MTLRenderCommandEncoder> enc,
                  indexBufferOffset:0];
 }
 
-static void metal_render(struct renderer *r, struct scene* scene, float dt)
+static void metal_render(struct renderer* r, struct scene* scene, float dt)
 {
         @autoreleasepool {
                 MetalContext *ctx = (__bridge MetalContext *)r->ctx;
@@ -394,8 +398,8 @@ static void metal_render(struct renderer *r, struct scene* scene, float dt)
                 }
 
                 /* ---- Draw entities (per-entity transform) ---- */
-                for (int i = 0; i < scene->entity_count; i++) {
-                        const struct entity *e = &scene->entities[i];
+                for (unsigned int i = 0; i < scene->entity_count; i++) {
+                        const struct entity *e = scene->entities[i];
                         const struct particle *p = &e->o.p;
 
                         /* Model = Translate * Rz * Ry * Rx */
@@ -422,7 +426,7 @@ static void metal_render(struct renderer *r, struct scene* scene, float dt)
         }
 }
 
-static void metal_resize(struct renderer *r, int width, int height)
+static void metal_resize(struct renderer* r, int width, int height)
 {
         MetalContext *ctx = (__bridge MetalContext *)r->ctx;
         (void)width;
@@ -438,7 +442,7 @@ static void metal_resize(struct renderer *r, int width, int height)
                 ctx.width, ctx.height);
 }
 
-static void metal_cleanup(struct renderer *r)
+static void metal_cleanup(struct renderer* r)
 {
         if (r->ctx) {
                 /* __bridge_transfer takes ownership back so ARC releases */

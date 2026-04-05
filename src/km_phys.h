@@ -72,13 +72,15 @@ struct world
         // Air density to use
         float air_density;
         // Any surfaces in the world
-        struct mesh* surfaces;
+        struct mesh** surfaces;
         // Number of meshes
-        int surface_count;
+        unsigned int surface_count;
+        unsigned int surface_cap;
         // Any water in the world
-        struct mesh* waters;
+        struct mesh** waters;
         // Number of meshes
-        int water_count;
+        unsigned int water_count;
+        unsigned int water_cap;
         // threshod for squared velocity to considered to be in a steady state
         float ss_thr;
 };
@@ -124,6 +126,22 @@ void update_water(struct water* w, struct mesh* v, float dt);
  * @return void
  */
 void default_world(struct world*, int);
+
+/**
+ * Add a mesh and increment the surface count
+ * @param w the world
+ * @param m the mesh to add as a surface
+ * @return void
+ */
+void world_add_mesh(struct world* w, struct mesh* m);
+
+/**
+ * Add a mesh and increment the surface count
+ * @param w the world
+ * @param m the mesh to add as a surface
+ * @return void
+ */
+void world_add_water(struct world* w, struct mesh* m);
 
 /**
  * Run one update step for all objects using the provided world.

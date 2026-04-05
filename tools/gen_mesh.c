@@ -132,7 +132,7 @@ int main(int argc, char* argv[])
         printf("indices:  %d\n", m->index_count);
 
         if (renderer->update(renderer,
-                             m, 1, 1) != 0)
+                             &m, 1, 1) != 0)
         {
                 fprintf(stderr, "Failed to create dynamic meshes\n");
                 renderer->cleanup(renderer);
@@ -174,7 +174,7 @@ int main(int argc, char* argv[])
                         mesh_colorize(m);
 
                         if (renderer->update(renderer,
-                                             m, 1, 0) != 0)
+                                             &m, 1, 0) != 0)
                         {
                                 fprintf(stderr, "Failed to create dynamic meshes\n");
                                 renderer->cleanup(renderer);

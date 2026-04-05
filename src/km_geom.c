@@ -93,17 +93,17 @@ int ray_tri_intersect(const struct particle* r,
 
 int compute_toi(struct collision* toi,
                 struct particle* p,
-                struct mesh* meshes,
-                int mesh_count)
+                struct mesh** meshes,
+                unsigned int mesh_count)
 {
         int coll_test;
         int ret = 0;
 
         toi->t = INFINITY;
 
-        for (int s = 0; s < mesh_count; s++)
+        for (unsigned int s = 0; s < mesh_count; s++)
         {
-                struct mesh* cm = meshes + s;
+                struct mesh* cm = meshes[s];
                 uint32_t num_tri = cm->index_count / 3;
 
                 for (uint32_t ti = 0; ti < num_tri; ti++)

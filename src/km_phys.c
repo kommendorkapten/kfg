@@ -42,10 +42,50 @@ void object_set_m(struct object* o, float m)
 
 void default_world(struct world* w, int fps)
 {
+        memset(w, 0, sizeof(*w));
+
+        w->surface_cap = 128;
+        w->surface_count = 0;
+        w->surfaces = malloc(w->surface_cap * sizeof(struct mesh*));
+
+        w->water_cap = 128;
+        w->water_count = 0;
+        w->waters = malloc(w->water_cap * sizeof(struct mesh*));
+
         w->g = (struct vec3){ .a = {0.0f, -KM_PHYS_G, 0.0f} };
         w->dt = 1.0f / (float)fps;
         w->air_density = KM_PHYS_AIR_DENS;
         w->ss_thr   = 0.008f * 0.008f; // 8mm/s
+}
+
+void world_add_mesh(struct world* w, struct mesh* m)
+{
+        if (w->surface_count == w->surface_cap)
+        {
+                w->surface_cap <<= 1;
+                struct mesh** new = malloc(w->surface_cap *
+                                           sizeof(struct mesh*));
+                memcpy(new, w->surfaces,
+                       w->surface_count * sizeof(struct mesh*));
+                free(w->surfaces);
+                w->surfaces = new;
+        }
+        w->surfaces[w->surface_count++] = m;
+}
+
+void world_add_water(struct world* w, struct mesh* m)
+{
+        if (w->water_count == w->water_cap)
+        {
+                w->water_cap <<= 1;
+                struct mesh** new = malloc(w->water_cap *
+                                           sizeof(struct mesh*));
+                memcpy(new, w->waters,
+                       w->water_count * sizeof(struct mesh*));
+                free(w->waters);
+                w->waters = new;
+        }
+        w->waters[w->water_count++] = m;
 }
 
 void update_objects(int step,

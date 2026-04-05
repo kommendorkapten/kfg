@@ -7,8 +7,10 @@
 app/km_app
 examples/bounce
 examples/visb
+examples/jump
 tests/free_fall
 tests/geom
 tests/test_friction
 tests/test_math
 tests/test_phys
+tools/gen_mesh

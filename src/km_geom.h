@@ -111,8 +111,8 @@ int ray_tri_intersect(const struct particle* r,
  */
 int compute_toi(struct collision* t,
                 struct particle* p,
-                struct mesh* m,
-                int mc);
+                struct mesh** m,
+                unsigned int mc);
 
 /**
  * Test if a position is on or just above the mesh.

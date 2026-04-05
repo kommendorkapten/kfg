@@ -37,6 +37,7 @@ int main(int argc, char *argv[])
 
         input.width = KM_DEFAULT_WIDTH;
         input.height = KM_DEFAULT_HEIGHT;
+        scene_init(&scene);
         default_world(&scene.w, 60);
 
         for (int i = 1; i < argc; i++)
@@ -100,20 +101,33 @@ int main(int argc, char *argv[])
         input.theta = atan2f(cd.z, cd.x);
 
         // Setup static meshes
-        scene.w.surfaces = load_meshes(world_file, &scene.w.surface_count);
-        if (scene.w.surfaces)
+        int surface_count = 0;
+        struct mesh* surfaces = load_meshes(world_file, &surface_count);
+        if (surfaces)
         {
                 struct vec3 level = (struct vec3){ .a = {0.0f, -1.0f, 0.0f } };
-                mesh_translate(scene.w.surfaces, level);
+                for (int i = 0; i < surface_count; i++)
+                {
+                        mesh_translate(&surfaces[i], level);
+                        world_add_mesh(&scene.w, &surfaces[i]);
+                }
         }
 
-        scene.w.waters = load_meshes(water_file, &scene.w.water_count);
+        int water_count = 0;
+        struct mesh* waters = load_meshes(water_file, &water_count);
 
         struct water w;
-        init_water(&w, scene.w.waters, scene.w.surfaces);
-
-        mesh_colorize_water(scene.w.waters);
-        mesh_normalize(scene.w.waters);
+        if (waters && water_count > 0)
+        {
+                for (int i = 0; i < water_count; i++)
+                {
+                        world_add_water(&scene.w, &waters[i]);
+                }
+                init_water(&w, &waters[0],
+                           surface_count > 0 ? &surfaces[0] : NULL);
+                mesh_colorize_water(&waters[0]);
+                mesh_normalize(&waters[0]);
+        }
 
         scene.entity_count = 0;
         if (renderer->upload(renderer,
@@ -167,26 +181,26 @@ int main(int argc, char *argv[])
                 last = now;
 
                 // update objects
-                for (int i = 0; i < scene.entity_count; i++)
+                for (unsigned int i = 0; i < scene.entity_count; i++)
                 {
-                        update_object(1, &scene.w, &scene.entities[i].o);
+                        update_object(1, &scene.w, &scene.entities[i]->o);
                 }
 
                 // animate
-                for (int i = 0; i < scene.entity_count; i++)
+                for (unsigned int i = 0; i < scene.entity_count; i++)
                 {
-                        if (scene.entities[i].animate)
+                        if (scene.entities[i]->animate)
                         {
-                                scene.entities[i].animate(&scene.entities[i], dt);
+                                scene.entities[i]->animate(scene.entities[i], dt);
                         }
                 }
 
                 // Animate environment
-                for (int i = 0; i < scene.w.water_count; i++)
+                for (unsigned int i = 0; i < scene.w.water_count; i++)
                 {
-                        update_water(&w, scene.w.waters + i, dt);
-                        mesh_normalize(scene.w.waters);
-                        mesh_colorize_water(scene.w.waters);
+                        update_water(&w, scene.w.waters[i], dt);
+                        mesh_normalize(scene.w.waters[i]);
+                        mesh_colorize_water(scene.w.waters[i]);
                 }
 
                 // Update dynamic mesh GPU data
@@ -226,11 +240,17 @@ int main(int argc, char *argv[])
 
         renderer->cleanup(renderer);
         free(renderer);
-        for (int i = 0; i < scene.w.surface_count; i++)
+        for (int i = 0; i < surface_count; i++)
         {
-                mesh_free(scene.w.surfaces + i);
+                mesh_free(&surfaces[i]);
         }
-        free(scene.w.surfaces);
+        free(surfaces);
+        for (int i = 0; i < water_count; i++)
+        {
+                mesh_free(&waters[i]);
+        }
+        free(waters);
+        scene_free(&scene);
 
         km_window_destroy(&window);
         SDL_Quit();
