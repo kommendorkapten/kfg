@@ -21,7 +21,7 @@ struct entity
         struct animation a;
         animate_fn animate;
         struct mesh* surfaces;
-        int surface_count;
+        unsigned int surface_count;
 };
 
 struct camera
@@ -38,9 +38,22 @@ struct scene
 {
         struct world w;
         struct camera cam;
-        struct entity* entities;
-        int entity_count;
+        struct entity** entities;
+        unsigned int entity_count;
+        unsigned int entity_cap;
 };
+
+void scene_init(struct scene* s);
+
+void scene_free(struct scene* s);
+
+/**
+ * Add an entity and increment the entity count
+ * @param w the world
+ * @param m the mesh to add as a surface
+ * @return void
+ */
+void scene_add_entity(struct scene* s, struct entity* e);
 
 /**
  * Animate rotation around the X axis.

@@ -464,7 +464,7 @@ static int test_coll(void)
         m->restitution = 0.5f;
         m->static_mu = 0.5f;
         m->dynamic_mu = 0.5f;
-        w.surfaces = m;
+        w.surfaces = &m;
         w.surface_count = 1;
 
         o.p.v.y = -1.0f;

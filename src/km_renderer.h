@@ -22,16 +22,19 @@ enum renderer_backend
 };
 
 struct renderer {
-        int  (*init)(struct renderer *r, struct SDL_Window *window,
+        int  (*init)(struct renderer* r, struct SDL_Window* window,
                      int w, int h);
-        int  (*upload)(struct renderer *r,
-                       const struct mesh *static_meshes, int static_count,
-                       const struct entity *entities, int entity_count);
-        int  (*update)(struct renderer *r,
-                       const struct mesh *meshes, int count, int create);
-        void (*render)(struct renderer *r, struct scene* s, float dt);
-        void (*resize)(struct renderer *r, int width, int height);
-        void (*cleanup)(struct renderer *r);
+        int  (*upload)(struct renderer* r,
+                       struct mesh* const* static_meshes,
+                       unsigned int static_count,
+                       struct entity* const* entities,
+                       unsigned int entity_count);
+        int  (*update)(struct renderer* r,
+                       struct mesh* const* meshes,
+                       unsigned int count, int create);
+        void (*render)(struct renderer* r, struct scene* s, float dt);
+        void (*resize)(struct renderer* r, int width, int height);
+        void (*cleanup)(struct renderer* r);
         void *ctx;
 };
 

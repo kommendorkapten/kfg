@@ -3,12 +3,13 @@ TARGETS=bounce
 include ../common.mk
 
 ifeq ($(UNAME),Darwin)
-  TARGETS += visb
+  TARGETS += visb jump
 endif
 
 all: $(TARGETS)
 
-DEPS = ../src/objs/km_geom.o \
+DEPS = objs/common.o \
+	../src/objs/km_geom.o \
 	../src/objs/km_math.o \
 	../src/objs/km_phys.o \
 	../src/objs/timing.o \
@@ -37,6 +38,9 @@ CFLAGS     += $(SDL_CFLAGS) -I../src
 LDFLAGS    += $(SDL_LDFLAGS) $(FRAMEWORKS)
 LINT_FLAGS += $(SDL_CFLAGS)
 
+objs:
+	@mkdir -p objs
+
 bounce: bounce.c $(DEPS)
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
 
@@ -44,5 +48,9 @@ visb: visb.c $(DEPS)
 	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
 	cp ../src/objs/shaders.metallib .
 
+jump: jump.c $(DEPS)
+	$(CC) $(CFLAGS) -o $@ $^ $(LDFLAGS)
+	cp ../src/objs/shaders.metallib .
+
 clean:
-	rm -rf $(TARGETS)
+	rm -rf $(TARGETS) objs/*

@@ -15,31 +15,6 @@
 void set_high_priority(void);
 void init_object(struct object*);
 
-/*
-ran for 6016ms
-pos: 0.000000 -27.801714 0.000000
-vel: 0.000000 -5.837711 0.000000
-acl: 0.000000 0.000000 0.000000
-for: 0.000000 0.000000 0.000000
-
-bounce
-17 seconds
-pos: 0.000000 0.000517 0.000000
-vel: 0.000000 -0.098088 0.000000
-acl: 0.000000 -9.819977 0.000000
-18 seconds
-19 seconds
-20 seconds
-21 seconds
-22 seconds
-23 seconds
-24 seconds
-ran for 25016ms
-pos: 0.000000 0.000176 0.000000
-vel: 0.000000 -0.070332 0.000000
-acl: 0.000000 -9.820011 0.000000
-*/
-
 int main(int argc, char** argv)
 {
         struct timing start;
@@ -64,33 +39,14 @@ int main(int argc, char** argv)
         objs[0].m_inv = 1.0f;
         print_particle(&objs[0].p);
 
-        // create a mesh that (-1,1) (-1,-1) (1, -1) (1,1) in the x-z plane
-        struct mesh s1;
-        s1.vertices = malloc(4 * sizeof(struct vertex));
-        s1.indices = malloc(6 * sizeof(uint16_t));
-        s1.vertex_count = 4;
-        s1.index_count = 6;
-        s1.restitution = 0.6f;
-        s1.dynamic_mu = 0.5f;
+        // create a 2x2 mesh centered at origin
+        struct mesh* s1 = gen_mesh(2.0f, 2.0f, 1.0f);
+        mesh_translate(s1, (struct vec3){ .a = {-1.0f, 0.0f, -1.0f} });
+        s1->restitution = 0.6f;
+        s1->dynamic_mu = 0.5f;
 
-        s1.vertices[0].pos = (struct vec3){ .a = {-1.0f, 0.0f, -1.0f} };
-        s1.vertices[1].pos = (struct vec3){ .a = {-1.0f, 0.0f, 1.0f} };
-        s1.vertices[2].pos = (struct vec3){ .a = {1.0f, 0.0f, 1.0f} };
-        s1.vertices[3].pos = (struct vec3){ .a = {1.0f, 0.0f, -1.0f} };
-
-        s1.indices[0] = 0;
-        s1.indices[1] = 1;
-        s1.indices[2] = 2;
-        s1.indices[3] = 2;
-        s1.indices[4] = 3;
-        s1.indices[5] = 0;
-
-        w.g = (struct vec3){ .a = {0.0f, -9.82f, 0.0f} };
-        w.dt = (float)((double)PERIOD/(double)SECOND);
-        w.air_density = 1.225f;
-        w.surfaces = &s1;
-        w.surface_count = 1;
-        w.ss_thr   = 0.008f * 0.008f; // 8mm/s
+        default_world(&w, FREQ);
+        world_add_mesh(&w, s1);
 
         if (debug)
         {
