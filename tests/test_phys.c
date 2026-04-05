@@ -411,32 +411,18 @@ static int test_apex_no_steady_state(void)
         // and reaches the apex, it does not reach steady state.
         // Steady state should be reached when the object is resting.
 
-        // Init plane
-        struct mesh m = {0};
-        m.vertex_count = 4;
-        m.vertices = malloc(m.vertex_count * sizeof(struct vertex));
-        m.index_count = 6;
-        m.indices = malloc(m.index_count * sizeof(uint16_t));
-        m.restitution = 0.7f;
-        m.static_mu = 0.15f;
-        m.dynamic_mu = 0.1f;
-
-        float w = 4.0f;
-        float h = 4.0f;
-
-        m.vertices[0] = (struct vertex){ .pos = { .a = {-w,  0, -h} }, .normal = { .a = { 0,  1,  0} } };
-        m.vertices[1] = (struct vertex){ .pos = { .a = {-w,  0,  h} }, .normal = { .a = { 0,  1,  0} } };
-        m.vertices[2] = (struct vertex){ .pos = { .a = { w,  0,  h} }, .normal = { .a = { 0,  1,  0} } };
-        m.vertices[3] = (struct vertex){ .pos = { .a = { w,  0, -h} }, .normal = { .a = { 0,  1,  0} } };
-
-        m.indices[0] = 0; m.indices[1] = 1; m.indices[2] = 3;
-        m.indices[3] = 1; m.indices[4] = 2; m.indices[5] = 3;
+        struct mesh* m;
+        m = gen_mesh(10.0f, 10.0f, 1.0f);
+        mesh_translate(m, (struct vec3){ .a = {-5.0f, 0, -5.0f} });
+        m->restitution = 0.7f;
+        m->static_mu = 0.15f;
+        m->dynamic_mu = 0.1f;
 
         struct world wo;
         int freq = 60;
         default_world(&wo, freq);
         wo.surface_count = 1;
-        wo.surfaces = &m;
+        wo.surfaces = m;
 
         // init object
         struct object o = {0};
@@ -473,13 +459,14 @@ static int test_apex_no_steady_state(void)
                 ret = 1;
         }
 
-        if (o.contact_mesh != &m)
+        if (o.contact_mesh != m)
         {
                 printf("wrong contact mesh\n");
                 ret = 1;
         }
 
-        mesh_free(&m);
+        mesh_free(m);
+        free(m);
 
         return ret;
 }

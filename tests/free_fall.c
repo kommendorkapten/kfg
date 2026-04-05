@@ -452,27 +452,19 @@ static int test_drag(void)
 static int test_coll(void)
 {
         struct world w;
-        struct mesh m;
+        struct mesh* m;
         struct object o = {0};
         float epsilon = 0.0001f;
         int ret = 0;
 
         default_world(&w, 60);
 
-        m.vertex_count = 3;
-        m.vertices = malloc(m.vertex_count * sizeof(struct vertex));
-        m.vertices[0].pos = (struct vec3) { .a = { -1.0f, 0.0f, -2.0f } };
-        m.vertices[1].pos = (struct vec3) { .a = { -1.0f, 0.0f, 1.0f } };
-        m.vertices[2].pos = (struct vec3) { .a = { 2.0f, 0.0f, 1.0f } };
-        m.index_count = 3;
-        m.indices = malloc(m.index_count * sizeof(uint16_t));
-        m.indices[0] = 0;
-        m.indices[1] = 1;
-        m.indices[2] = 2;
-        m.restitution = 0.5f;
-        m.static_mu = 0.5f;
-        m.dynamic_mu = 0.5f;
-        w.surfaces = &m;
+        m = gen_mesh(4.0f, 4.0f, 1.0f);
+        mesh_translate(m, (struct vec3){ .a = {-2.0f, 0.0f, -2.0f}});
+        m->restitution = 0.5f;
+        m->static_mu = 0.5f;
+        m->dynamic_mu = 0.5f;
+        w.surfaces = m;
         w.surface_count = 1;
 
         o.p.v.y = -1.0f;
@@ -521,6 +513,9 @@ static int test_coll(void)
                         ret = 1;
                 }
         }
+
+        mesh_free(m);
+        free(m);
 
         return ret;
 }

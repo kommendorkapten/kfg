@@ -288,9 +288,21 @@ void init_plane(struct mesh* m, float w, float h, int tilt)
         m->vertices = malloc(m->vertex_count * sizeof(struct vertex));
         m->index_count = 6;
         m->indices = malloc(m->index_count * sizeof(uint16_t));
+        m->inward_normals = malloc(m->index_count * sizeof(struct vec3));
         m->restitution = 0.7f;
         m->static_mu = 0.15f;
         m->dynamic_mu = 0.1f;
+
+        if (m->vertices == NULL ||
+            m->indices == NULL ||
+            m->inward_normals == NULL)
+        {
+                free(m->vertices);
+                free(m->indices);
+                free(m->inward_normals);
+
+                return;
+        }
 
         w = w / 2.0f;
         h = h / 2.0f;
@@ -319,6 +331,9 @@ void init_plane(struct mesh* m, float w, float h, int tilt)
                 else                { r = c; g = 0; b = x; }
                 m->vertices[i].color = (struct vec4){ .a = { r + mm, g + mm, b + mm, 1.0f } };
         }
+
+        mesh_normalize(m);
+        mesh_inward_normalize(m);
 }
 
 void init_vert_plane(struct mesh* m, float x)
@@ -327,9 +342,22 @@ void init_vert_plane(struct mesh* m, float x)
         m->vertices = malloc(m->vertex_count * sizeof(struct vertex));
         m->index_count = 6;
         m->indices = malloc(m->index_count * sizeof(uint16_t));
+        m->inward_normals = malloc(m->index_count * sizeof(struct vec3));
         m->restitution = 0.7f;
         m->static_mu = 0.15f;
         m->dynamic_mu = 0.1f;
+
+        if (m->vertices == NULL ||
+            m->indices == NULL ||
+            m->inward_normals == NULL)
+        {
+                free(m->vertices);
+                free(m->indices);
+                free(m->inward_normals);
+
+                return;
+        }
+
 
         float w = 5.0f;
         float h = 5.0f;
@@ -358,4 +386,7 @@ void init_vert_plane(struct mesh* m, float x)
                 else                { r = c; g = 0; b = x; }
                 m->vertices[i].color = (struct vec4){ .a = { r + mm, g + mm, b + mm, 1.0f } };
         }
+
+        mesh_normalize(m);
+        mesh_inward_normalize(m);
 }

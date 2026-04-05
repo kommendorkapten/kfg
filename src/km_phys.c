@@ -99,6 +99,18 @@ void update_object(int step, const struct world* w, struct object* o)
                 // t is time to impact, measured in this step's displacement
                 if (!coll || toi.t > 1)
                 {
+                        // No collision
+                        // Check if the object is on a surface
+                        if (o->contact_mesh)
+                        {
+                                if (!point_on_mesh(o->contact_mesh,
+                                                   o->p.p))
+                                {
+                                        // Object slide off
+                                        o->contact_mesh = NULL;
+                                }
+                        }
+
                         vverlet_step(w, o, remaining);
                         break;
                 }
